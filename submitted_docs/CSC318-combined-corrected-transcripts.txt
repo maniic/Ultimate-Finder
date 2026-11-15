@@ -1,0 +1,375 @@
+Abdullah
+
+[00:00] Interviewer: Yeah, hi. What's your name and what year are you in?
+
+[00:04] Abdullah: My name is Abdullah [surname unclear]. I'm a third-year student.
+
+[00:09] Interviewer: Have you ever struggled to find a room on campus?
+
+[00:12] Abdullah: Yes.
+
+[00:14] Interviewer: Tell me about it.
+
+[00:15] Abdullah: Last week I was looking for a room in Health Science. It was, like, marked as a meditation room or prayer room, so I wanted to go there to pray, but the elevator wasn't working. And even after that, when I used the stairs, I couldn't find the room easily.
+
+[00:33] Interviewer: How did you find it at the end? What tools did you use?
+
+[00:38] Abdullah: Just go to the first number of the room and go to that floor and just look around.
+
+[00:51] Interviewer: How did that experience affect you? Like, how did you feel at that time?
+
+[00:56] Abdullah: I'm like, I'm wasting time. Like, I had an exam right after that, and I was afraid I was gonna be late.
+
+[01:06] Interviewer: What other facilities on campus have you, like, looked for? Charging spots, microwaves, a study room?
+
+[01:16] Abdullah: Yeah, charging spots and water fountains, mainly near classrooms or in classrooms.
+
+[01:27] Interviewer: How would a potential solution look like to you? Something that you would actually use.
+
+[01:33] Abdullah: Like a website or a light app that makes me input, like, the building or the room number and finds near spots to me, like nearest water fountain or nearest [unclear charging-related word] to charge my phone or something like that.
+
+[01:53] Interviewer: If we do implement a solution, what other facilities do you recommend we add to it, other than the room finder? And you said charging spots and water fountains.
+
+[02:06] Abdullah: Maybe libraries, microwaves. I don't know, that's all.
+
+[02:15] Interviewer: Okay, thank you for your time.
+
+
+Ali
+
+[00:01] Interviewer: Hi, what's your name and what year are you in?
+
+[00:04] Ali: My name is Ali. I'm in third year.
+
+[00:07] Interviewer: Have you ever struggled to look for a specific room on campus?
+
+[00:12] Ali: Yes, recently I was looking for a Health Science room. I had a midterm there. I did not find it quickly enough.
+
+[00:22] Interviewer: What tools did you use to find the room, and how did you end up finding it?
+
+[00:27] Ali: I used Google Maps, but that was not helpful enough. I entered two buildings. I saw the signs until, like, I found a sign that directly led me to the room.
+
+[00:42] Interviewer: And what did that struggle make you feel at that time?
+
+[00:47] Ali: Fortunately, I had enough time. But if I did not have enough time to find a room, I would be late to my midterm, which is not good. Um.
+
+[00:56] Interviewer: What about any other facilities on campus? Bathrooms, water fountains, microwaves. Did you ever struggle to find any of this?
+
+[01:06] Ali: Well, I did not, like, explicitly try to find a kitchen. I sometimes wish that there is, like, a small kitchen [unclear wording] that I can use. I'm not sure [unclear wording]. I did not hear about it before.
+
+[01:22] Interviewer: What exactly in a kitchen would you use?
+
+[01:26] Ali: Microwave, sink.
+
+[01:33] Interviewer: If we—what would you look for in a potential solution? How can we help you?
+
+[01:41] Ali: Maybe a website with, like, videos that take me through the path to get to the place.
+
+[01:50] Interviewer: Thank you for your time.
+
+
+Ashmin
+
+[00:01] Interviewer: Hi, what's your name and what year are you in?
+
+[00:04] Ashmin: I'm Ashmin, and I'm in my fourth year right now.
+
+[00:09] Interviewer: Have you struggled to find a specific room in a building?
+
+[00:14] Ashmin: Specific room? I wouldn't say a specific room particularly, but, like, if we talk—if you're talking about rooms, like, if we go to Robarts or someplace, and if I want to study in a quiet place, then finding a particular room is kind of difficult for me.
+
+[00:27] Interviewer: I mean, like, if you had a class in room BA 3125.
+
+[00:34] Ashmin: Yeah, yeah. That is especially in UC. When I have any class in UC, finding a room over there is pretty difficult because there are no signs over there.
+
+[00:46] Interviewer: Can you tell me about a specific encounter you had, a situation, and what did you do? How did you eventually find that room?
+
+[00:54] Ashmin: So I had—last year I had a math class in University College, and I knew it was in the basement. But finding the class specifically was quite difficult because there was no mention, or there were no signs where the rooms were. So I had to, like, search the whole basement just to find it. And I would say same with New College. Finding rooms over there is pretty difficult.
+
+[01:22] Interviewer: And, like, how does that make you feel?
+
+[01:26] Ashmin: For the first time, it's pretty intense. Like, if you're especially getting late for the class, you feel like, you know, sometimes you feel like not—not to go, because, like, you keep finding the class for, like, straight ten minutes, and then you realize the class has already started, or, like, you might miss the class. So sometimes I feel like just not going to the class.
+
+[01:51] Interviewer: Okay, what about other facilities in the university, like water fountains, bathrooms, microwaves, charging spots? Do you ever struggle to find these spots?
+
+[02:01] Ashmin: I would say water fountains is one thing that is a bit difficult to find. Except for that, like, I haven't used microwaves, so...
+
+[02:12] Interviewer: Any other facilities I didn't mention?
+
+[02:14] Ashmin: Like I mentioned before, like, particular rooms in Robarts.
+
+[02:19] [Speaker attribution uncertain] Study rooms?
+
+[02:19] [Speaker attribution uncertain] Yes, study rooms.
+
+[02:22] Interviewer: What would a potential solution look like to you? How could we help you?
+
+[02:29] Ashmin: One main thing I would say is to specifically label where these classes are and, like, a direction or something. That would be one thing that would help me.
+
+[02:44] Interviewer: What if we made an app or a website? What would need to be in the app or website so you would be eager to use it? What would make you use it?
+
+[02:59] Ashmin: You know, like Google Maps or something. Like, there was this feature on Google Maps where you can literally, like, show the surroundings and then it can direct you. That would be pretty cool.
+
+[03:13] Interviewer: Thank you for your time.
+
+[03:14] Ashmin: Yeah.
+
+
+Bader
+
+[00:01] Interviewer: Hi, what's your name and what year are you in?
+
+[00:04] Bader: Bader [surname unclear]. I'm in fourth year.
+
+[00:07] Interviewer: Have you ever struggled to find a room on campus?
+
+[00:09] Bader: Yes.
+
+[00:11] Interviewer: Tell me about it.
+
+[00:12] Bader: So, sometimes some rooms would be filled up, or, like, sometimes you'd be booking rooms, but you'd have people in these rooms and, like, they'd refuse to go out. Sometimes, like, you want to go to a specific place, or, like, a place where, like, say, like, it's a quiet place to study in, but you know, like, it's going to be too noisy because there's too many people there. You know, stuff like that.
+
+[00:33] Interviewer: What about, like, a specific room? Like you had a class in Bahen 3192. Have you ever struggled to find a room?
+
+[00:42] Bader: Kind of, especially if it's, like, a room maybe in an old building, or, like, in a building where, like, the rooms are not that obvious. For example, like, I went to the astronomy building this morning, and I was looking for this specific room. I forgot which number it was, but, like, it was kind of, like, clamped into a corner, so it made it difficult to find. So, like, in general, I'd say that would be [unclear wording]. Even though, like, there's a website online that shows you the rooms, it's still a hassle to, like, find rooms, and, like, you'd end up being a few minutes late.
+
+[01:12] Interviewer: How did you eventually find it?
+
+[01:14] Bader: I'll have to keep asking around, or, like, I remember going on Reddit sometimes, and, like, some people would be asking for a specific one that I'm looking for, and, like, I'll just, like, follow what the subreddit says. So, like, I'll have to use, like, non-U of T sources to find a room within U of T.
+
+[01:30] Interviewer: Okay, any other facilities you've struggled to find? Water fountains, microwaves, bathrooms?
+
+[01:37] Bader: No, not really. Like, water fountains are everywhere. I think, like, my main struggle would be, would be, like, either study rooms or lecture rooms.
+
+[01:43] Interviewer: Study rooms or what?
+
+[01:45] Bader: Lecture rooms.
+
+[01:46] Interviewer: Lecture rooms. How would a potential solution look like to you? How can we help you?
+
+[01:56] Bader: A potential solution would be perhaps providing a service or, like, an application where, like, it's—think of, like, Google Maps but, like, for U of T specifically. Like, I know U of T has a specific map, but, like, it doesn't really show you the rooms. If I press the room, it's just going to show me the building. But if you were to map down, like, every room to a specific database and, like, use that as, like, you know, like a navigation app, that would help a lot. You know, especially, like, indoors. Even though, like, indoors, like, sometimes satellites don't really work that well indoors, but, like, it would still tell you, like, go to the upper floor and, like, you know, go left or go right, and so on and so forth. Stuff like that.
+
+[02:34] Interviewer: What was that website you talked about? You said there is a website that shows you where the room is inside the building. Is it specific to U of T, or...?
+
+[02:45] Bader: It is specific to U of T. So the website is LSM, Learning Space Management. So, like, they provide, like, buildings and, like, specific rooms for it. But sometimes, like, it's still a hassle to, like, find the specific room.
+
+[03:06] Interviewer: Okay, thank you for your time.
+
+
+Chelsie
+
+[00:01] Interviewer: Hi, what's your name and what year are you in?
+
+[00:04] Chelsie: My name is Chelsie. I'm a first-year PhD student.
+
+[00:08] Interviewer: Okay. Have you ever struggled to find a specific room on campus?
+
+[00:13] Chelsie: A specific what?
+
+[00:14] Interviewer: A specific room. If you had a class in a specific room, did you have any struggle?
+
+[00:20] Chelsie: Yeah, well, I just moved here, so it's a very difficult campus to navigate. I think it's pretty big.
+
+[00:27] Interviewer: So, like, can you mention any specific situation you had, like, in the past few days, few weeks? Like, let's say any specific building you had to struggle finding rooms in.
+
+[00:40] Chelsie: Yeah, the, um, I think it's the OISE building.
+
+[00:44] Interviewer: OISE?
+
+[00:45] Chelsie: Yeah, OISE building. I have a lecture—well, I'm a TA for the ANT100 lecture, and so I was trying to find it so I could go to the lecture, and it was very hard to find it. So...
+
+[00:57] Interviewer: What tools did you use to find that room? How did you end up finding it?
+
+[01:02] Chelsie: I used Google Maps to get to the building after walking around for a little bit. And then I used—then there were actually some very convenient lines on the floor saying, this is where the lecture hall is, follow these to get there. And I was like, okay. So I followed the lines on the floor and then the signs.
+
+[01:22] Interviewer: But would you say that it was easy to find?
+
+[01:25] Chelsie: It was easy after I figured out where I was going in the first place with Google Maps, yeah.
+
+[01:32] Interviewer: Okay, what about any other facilities on campus, like water fountains, bathrooms, microwaves?
+
+[01:39] Chelsie: Oh, yeah, I would say water fountains are very difficult to find, especially in the Anthropology Building. They don't have any—they don't have, like, the water bottle fillers on, I'm pretty sure, on any of the floors. They only have, like, the regular water fountains, so, like, the water is gross, and I have to, like, look around to find, like, a good water bottle filler that's, like, drinkable water.
+
+[02:01] Interviewer: And what do these kind of situations, like, make you feel? Not able to find a room conveniently, or not finding a good water fountain.
+
+[02:10] Chelsie: Frustrated, dehydrated. Yeah, yeah. Mostly those two.
+
+[02:21] Interviewer: What would a potential solution look like to you? How could we help you?
+
+[02:25] Chelsie: Installing more water bottle filters, or maybe, like, an app on campus, like, that says where, like, all the water bottle fillers are. Those two things. Maybe more signs, like, for classrooms, where, like, big lecture halls are, things like that.
+
+[02:42] Interviewer: Okay, thank you for your time.
+
+
+Cosiva
+
+[00:01] Interviewer: Hi, what's your name? And what year are you in?
+
+[00:05] Cosiva: I'm Cosiva. I'm in second year.
+
+[00:10] Interviewer: Have you ever found a struggle finding a specific room in a building?
+
+[00:17] Cosiva: Sometimes. It often depends on the building. Some of them are, like, the layout is more confusing than others.
+
+[00:22] Interviewer: Can you tell me about [unclear wording]?
+
+[00:24] Cosiva: Some of the 200 rooms, like the rooms on the first floor, the, like, 100, 200 rooms, are kind of confusing to find. Like, the layout's kind of weird. And then also I think some of the—Myhal is usually pretty okay. They have lots of signs. I think MP—I think if I tried to find an office in MP, that'd be more iffy. But I think it depends on the building.
+
+[00:46] Interviewer: What's, like, a memorable encounter you had a few days or a few weeks...?
+
+[00:52] Cosiva: I think recently, because I've just been—this is second year, and all my classes are in the same buildings this year.
+
+[00:59] Interviewer: Okay, like, for any encounter you could remember, what tools did you use to eventually find the room you're looking for? What helped you?
+
+[01:10] Cosiva: I kind of just found—most of them are numbered, and they're usually, they're close together to the right number. So I would usually just, like, find which sequence it's going in and then just follow that, and then just kind of wander in the right area until I bump into it, basically.
+
+[01:26] Interviewer: And, like, how does that make you feel?
+
+[01:30] Cosiva: Like, I don't know. If I have time, it's kind of adventurous. If I'm stressed and I don't have time, then it's kind of annoying.
+
+[01:36] Interviewer: What about any other facilities on campus? Bathrooms, water fountains, microwaves. Have you ever found struggle, like, searching for any of that? Charging spots?
+
+[01:46] Cosiva: I think I've been okay finding most of that, but that's the thing. I think that's because in the first couple weeks of first year, I kind of mapped out everything, where everything in my area was, and now I just have that memorized. Like, microwaves and stuff. Like, I know there's a microwave in, um, MS, like the cafeteria. I know there's a microwave there, and I know there's a microwave in [second location unclear]. And now if I need a microwave, I just go there. I don't look for a new one.
+
+[02:12] Interviewer: Okay, so do you think this problem, like people struggling to find rooms or facilities, do you think that's something worth a solution?
+
+[02:23] Cosiva: Probably, especially if you're, like, new and a first year. You don't have anyone who's been on campus or knows their way around campus, and it can be a lot harder to find your stuff and, like, find where you need to be. But I think once you get into your upper years, I think you're generally okay unless you, like, swap majors, and then you're, like, in a new area, and [unclear wording] that first couple weeks of being lost again.
+
+[02:46] Interviewer: Okay, what would a potential solution look like to you? How could we help with that?
+
+[02:50] Cosiva: Um, I think U of T's map for the buildings is, like, half decent. So they could probably just maybe add something that, like, shows the building layouts so they could just point out the rooms too, if you needed that. Um, I think you mentioning microwaves and water fountains, they could probably, if they're doing, like, a map kind of thing, they could, like, add, like, little, like, colors or something to, like, where those are. Um, I think also for, um, like, Myhal's a newer building, and they have pretty decent signage. But, like, some of the older buildings I've been in, like Hart House—Hart House has, like, new signs. But, like, sometimes, um, if a building is, like, in that weird middle age where, like, they don't have signs, then it's, like, those ones can be harder to find, like, their way around.
+
+[03:35] Interviewer: Okay, thank you for your time.
+
+[03:37] Cosiva: Thank you.
+
+
+Mohammed
+
+[00:01] Interviewer: Hi, what's your name? And what year are you in?
+
+[00:03] Mohammed: My name is Mohammed [surname unclear]. I'm in third year.
+
+[00:07] Interviewer: Have you ever struggled to find a room on campus?
+
+[00:11] [Speaker attribution uncertain] Can you [unclear wording] the question?
+
+[00:12] Interviewer: Have you ever struggled to find a specific room on campus?
+
+[00:17] Mohammed: Yes, a lot of times.
+
+[00:19] Interviewer: Tell me about it. What did you do?
+
+[00:22] Mohammed: Well, I just today I tried finding room 75, Wetmore 75. Could not find it. Had to, like, walk around for, like—I got lost, but then I eventually found it. But then I realized, like, it was a closer entrance. It was a closer entrance to where I started from, and it's, like, I went, like, around the building for an entire, like, loop for no reason.
+
+[00:44] Interviewer: How did you eventually find it?
+
+[00:45] Mohammed: Just, I read the signs, but, like, it was, you know, complex. Up, down, right, left.
+
+[00:52] Interviewer: How did that make you feel?
+
+[00:55] Mohammed: Too much work. It's too much work.
+
+[01:01] Interviewer: Have you ever looked for other facilities on campus? Water fountains, microwaves, bathrooms? Anything you can think of?
+
+[01:11] Mohammed: No, no. I know a place for all of these, so I don't, like...
+
+[01:16] Interviewer: And you always go straight to them?
+
+[01:18] Mohammed: Yes.
+
+[01:19] Interviewer: You don't look for them? Okay. For the room parts, what would a potential solution look like to you? How could we help you?
+
+[01:31] Mohammed: Uh, perhaps have some—well, I think some visualization of going to that room. Like, if I can look up the room online, like, I don't know, like, Wetmore 75 U of T, and it told me, like, the entrance. Like, okay, go right, go left. This is where—this is which [floor/storey unclear] it is, et cetera.
+
+[01:52] Interviewer: Visual steps or just a description?
+
+[01:56] Mohammed: Yes, visual steps. A description would help, will be better than what we have.
+
+[02:01] Interviewer: Okay, thank you for your time.
+
+[02:07] Mohammed: You're welcome.
+
+
+Salem
+
+[00:00] Interviewer: Hi, what's your name and what year are you in?
+
+[00:03] Salem: Hi, my name is Salem [surname unclear]. I'm in third year.
+
+[00:07] Interviewer: Have you ever struggled to find a specific room on campus?
+
+[00:10] Salem: Yeah, specifically the rooms I struggle with finding are professor rooms. So when I'd have office hours, and they'd give me a specific room number with a building code, I'd always struggle in finding where the professor actually is.
+
+[00:23] Interviewer: Tell me about the most recent time that happened, and how did you handle it? What tools did you use, and how did you reach it at the end?
+
+[00:32] Salem: So how I handled it was, I think, like everybody. I just look for where the building is and scour the building until I find the room. The tools I used were Google searching the building, as well as maybe asking a friend.
+
+[00:50] Interviewer: How did that make you feel at the time?
+
+[00:56] Salem: Honestly, just, like, it was a waste of time. I'd rather get to my destination right away. So that's about it.
+
+[01:03] Interviewer: What other facilities have you looked for on campus and struggled to find them?
+
+[01:10] Salem: Prayer rooms, washrooms, water fountains, although not a lot for the water fountains. Maybe somewhere to eat sometimes as well, like maybe get a snack.
+
+[01:29] Interviewer: How would a potential solution look like to you, something that you would actually use?
+
+[01:34] Salem: Maybe something like an application that would guide me, or something that's easily accessible, like the Quercus website. That would be really good.
+
+[01:50] Interviewer: In what way would it help you? Like, what would you need to see on that website or app?
+
+[01:57] Salem: Building options, as well as their codes, and for every building it would give, like, a list of every facility. And then for that facility, it would give it its exact room number, maybe, and floor also. Like where it's located, maybe south, like somewhere in Medical Science, somewhere south is different from somewhere north.
+
+[02:21] Interviewer: Okay, thank you for your time.
+
+
+Thamer
+
+[00:01] Interviewer: Hi, what's your name and what year are you in?
+
+[00:04] Thamer: My name is Thamer [surname unclear]. I'm a U of T student doing finance.
+
+[00:10] Interviewer: What year are you in?
+
+[00:11] Thamer: I'm in second year.
+
+[00:14] Interviewer: Have you ever struggled to find a specific room on campus? Like, if you have a course and a building code and a number, have you ever struggled to find a room?
+
+[00:24] Thamer: Like a study room?
+
+[00:26] Interviewer: No, when you have a class with a specific room, have you ever struggled to find that room?
+
+[00:34] Thamer: Sometimes, yeah. It depends. When I'm going to a new building and there's a lot of floors, sometimes finding the room is kind of difficult. Yeah, I do. I do struggle sometimes.
+
+[00:46] Interviewer: Tell me about the last time you struggled to find a room, and what did you do to handle that situation?
+
+[00:52] Thamer: Last time I had a class in the Ontario Institute of Studies and Education building, and there was, like, twelve floors in the same building. So my class was on the tenth floor, and I got kind of confused in terms of what does number ten represent. Is it the first floor, or what is it?
+
+[01:17] Interviewer: What tools did you eventually use to find that room? So what sort of information did you use?
+
+[01:24] Thamer: Actually, I just followed the signs in the building and took the elevator, and then I found it.
+
+[01:34] Interviewer: What other facilities have you looked for on campus? For example, water fountains, bathrooms, microwaves?
+
+[01:43] Thamer: Washrooms, of course, and then the fountains of water very frequently, especially the one in Gerstein. And, yeah, that's pretty much it.
+
+[01:59] Interviewer: When you struggle to find something, for example, the one in OISE...
+
+[02:06] Thamer: Yeah.
+
+[02:06] Interviewer: How did it make you feel at the time, when you're looking around, confused, struggling?
+
+[02:13] Thamer: Um, I was, I was actually late for a class, and it was stressful because there was, like, grades for attendance, so I wasn't really, um, glad for struggling to find the room easily. But, like, eventually I entered, like, six or seven minutes late. So it was, it was a little bit like a problem, but I think in the, in the very beginning of every semester, professors and TAs are used to this, and they don't really judge you.
+
+[02:46] Interviewer: How could we help you with that? What would a potential solution look like to you?
+
+[02:52] Thamer: I think that there has to be maybe an explanation of the room in the syllabus for every, every room in the course. And also there probably should be, like, an employee or a guy working in every building to help students, especially in the very beginning of every semester.
+
+[03:11] Interviewer: Would it help you if there was an app or a website that guides you to each room? Like, you input the building code and room number, and it guides you step by step to the room.
+
+[03:22] Thamer: That would be amazing, honestly, because we really need something like that as U of T students. Because the concept of searching about the building itself before looking about the room—when I first looked at the OISE building, I didn't even know where it is. So I had to use [source unclear] and, like, search about it and double-check it multiple times before I go. And, yeah, it could be, it could be risky to go to another building, especially if there's, like, attendance grades.
+
+[03:48] Interviewer: Okay, thank you for your time.
+
+[03:50] Thamer: No problem.
