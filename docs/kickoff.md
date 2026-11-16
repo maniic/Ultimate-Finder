@@ -139,7 +139,9 @@ flowchart TD
     S7 -- "yes: merge + re-check" --> S4
     S7 -- "no" --> S8["Claude opens a PR<br/>and merges it into main"]
     S8 --> S9["⏱ Server checks GitHub every 2 min"]
-    S9 --> S10["Build the Dockerfile + safety checks"]
+    S9 --> S9b{"Migrations additive only?<br/>(no drops, renames, edits)"}
+    S9b -- "no" --> S14
+    S9b -- "yes" --> S10["Build the Dockerfile + safety checks"]
     S10 --> S11["Back up the DB, run migrations"]
     S11 --> S12{"Starts and<br/>/healthz OK?"}
     S12 -- "yes" --> S13["🌐 Live on<br/>ultimate-finder.junaidarshad.com"]
