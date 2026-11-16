@@ -1,0 +1,6 @@
+.view-navigate .nav-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.view-navigate .exit { padding: 8px 14px; }
+.view-navigate .plan-mini { max-height: 140px; }
+.view-navigate .instruction { font-size: 1.2rem; font-weight: 600; }
+.view-navigate .btn[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+.view-navigate .mismatch { border-style: dashed; }

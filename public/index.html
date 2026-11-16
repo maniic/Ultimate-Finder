@@ -2,18 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Ultimate Finder</title>
-  <style>
-    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; }
-    main { max-width: 36rem; }
-  </style>
+  <link rel="stylesheet" href="/css/base.css">
+  <script type="module" src="/js/app.js"></script>
 </head>
 <body>
-  <main>
-    <h1>Ultimate Finder</h1>
-    <p>Wayfinding at U of T. Prototype coming soon.</p>
-  </main>
+  <div class="app">
+    <header class="app-header">
+      <a class="brand" href="#/search">Ultimate Finder</a>
+    </header>
+
+    <!-- The router renders the current view in here. -->
+    <main id="view" class="view" tabindex="-1"></main>
+
+    <nav class="tabs" aria-label="Main">
+      <a href="#/search" data-tab="search">Find a room</a>
+      <a href="#/facilities" data-tab="facilities">Facilities</a>
+    </nav>
+  </div>
 </body>
 </html>

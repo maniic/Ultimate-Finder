@@ -13,17 +13,40 @@ placeholder page from `public/`, with `GET /healthz` for the deploy health
 check, a `Dockerfile` (node:24-alpine, `npm ci`, runs as `node`), and
 `CLAUDE.md` describing the auto-deploy rules and the deploy contract.
 
-No product code yet. The design work lives in `submitted_docs/` (formative
-studies, interview report, design concepts, experience map, floor-plan atlas).
+**App shell + six starter views** (branch `app-shell`): a hash router, shared
+`h()` helpers, mock OISE data, and an SVG floor-plan renderer. There's one
+folder per prototype screen: search, preview, floorplan, navigate, recover
+and facilities. Each is a working, phone-first view of the paper-prototype
+flow (OISE 10-210), and each `view.js` starts with a TODO list taken from
+the evaluation findings. The views were smoke-tested by screenshotting
+every route in headless Chrome. `README.md` has the owner table and the
+branch workflow.
+
+The design work lives in `submitted_docs/`. The chosen direction is in
+`Ultimate Finder_ Prototyping Wayfinding at U of T (4).pdf`: an interactive
+floor plan plus photo step cards, with evaluation findings and planned
+design changes on pp. 22–32.
 
 ## Next up
 
-- Choose the frontend approach for the prototype (plain JS in `public/`, or a
-  build step such as Vite). A build step must run inside the `Dockerfile`; the
-  server only does `docker build`.
-- First real feature from the chosen design concept.
+- Teammates claim a view (Owner column in `README.md`) and work on
+  `view/<name>` branches.
+- Replace mock data with real buildings/rooms/routes. Real floor plans are
+  in `submitted_docs/St. George Campus Floor-Plan Atlas.pdf`. Take real
+  step photos.
+- Evaluation priorities (report p. 30): recovery for users who don't know
+  where they are (severity 3), step-free clarity, Previous step / Finish
+  route (done in the starter), map legend (done in the starter), building
+  names as well as codes (done in the starter).
 
 ## Decisions log
+
+- **2026-11-16: no build step; one folder per view; URL-only coupling.** Six
+  people work in parallel, so the structure minimises merge conflicts: each
+  screen lives in its own folder, and views pass state only through the
+  hash URL. Plain ES modules keep the `Dockerfile` trivial and let anyone
+  edit and refresh. Revisit if someone wants a framework, since that's a
+  `Dockerfile` change too.
 
 - **2026-11-16: `main` auto-deploys.** Several classmates contribute, so merges
   to `main` deploy without waiting on one person. The flip side is that `main`

@@ -1,0 +1,6 @@
+.view-search .suggestions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.view-search .suggestions:empty { display: none; }
+.view-search .suggestion { width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--accent-soft); color: var(--text); font: inherit; cursor: pointer; }
+.view-search .message:empty { display: none; }
+.view-search .message { color: var(--bad); }
+.view-search .linklike { background: none; border: none; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
