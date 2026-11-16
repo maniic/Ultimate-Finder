@@ -30,8 +30,10 @@ Rules that follow from this (they apply to humans and AI agents alike):
 
 - **Never commit or push directly to `main`.** Work on a branch, open a pull
   request, and merge it only when it works locally (`npm start`, then load
-  the page and `/healthz`). An agent should open the PR and stop. Merging is
-  a human decision, because merging is deploying.
+  the page and `/healthz`). An agent opens the PR and stops: merging is
+  deploying, so it's a human decision. An agent may merge only when a
+  teammate explicitly asks it to (`gh pr merge <n> --merge`, not squash, so
+  stacked branches stay clean), then confirms the deploy went live.
 - **Keep `main` deployable at every commit.** Don't merge half-finished work
   that breaks the server. Put it behind a page nobody links to yet, or keep
   it on a branch.
