@@ -1,5 +1,5 @@
-// VIEW: Search. Building (name or code) + room number. Prototype Fig. 2a/2b.
 // Owner: (your name here)
+// VIEW: Search. Building (name or code) + room number. Prototype Fig. 2a/2b.
 // In:  #/search?b=OI&r=10-210   (optional, pre-fills the form)
 // Out: #/preview?b=<code>&r=<room>
 //

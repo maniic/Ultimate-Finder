@@ -1,5 +1,5 @@
-// VIEW: Step-by-step navigation. One instruction at a time, with a photo of
 // Owner: (your name here)
+// VIEW: Step-by-step navigation. One instruction at a time, with a photo of
 // what to look for, a mini map and progress. Prototype Fig. 3; concept 2.
 // In:  #/navigate?b=OI&r=10-210&step=1[&stepfree=1][&alt=blockedElevator]
 // Out: #/recover?... ("This isn't what I see")  ·  #/search (finish/exit)

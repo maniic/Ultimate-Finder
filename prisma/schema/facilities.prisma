@@ -1,0 +1,13 @@
+// Facilities feature (public/views/facilities, src/api/facilities.js).
+
+// Problem reports from the Facilities view ("Report a problem").
+// User-submitted and unauthenticated, so treat every field as untrusted.
+model FacilityReport {
+  id         Int      @id @default(autoincrement())
+  facilityId String   @db.VarChar(64)
+  problem    String   @db.VarChar(32)
+  note       String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+
+  @@index([facilityId, createdAt])
+}

@@ -5,3 +5,8 @@
 .view-facilities .result { text-decoration: none; color: var(--text); gap: 4px; }
 .view-facilities .row { display: flex; justify-content: space-between; }
 .view-facilities .plan-mini { max-height: 160px; }
+.view-facilities .reports-section { display: flex; flex-direction: column; gap: 10px; }
+.view-facilities .reports { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.view-facilities .reports li { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.view-facilities .report-form[hidden] { display: none; }
+.view-facilities .btn[hidden] { display: none; }

@@ -1,6 +1,12 @@
 .git
 node_modules
+generated
 npm-debug.log
 .env
 submitted_docs
 *.md
+compose.yaml
+.agents
+.windsurf
+.claude
+skills-lock.json

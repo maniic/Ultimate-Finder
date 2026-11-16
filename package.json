@@ -6,12 +6,21 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio --port 5555 --browser none"
   },
   "engines": {
     "node": ">=24"
   },
   "dependencies": {
-    "express": "^4.21.1"
-  }
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "express": "^4.21.1",
+    "pg": "^8.23.1",
+    "prisma": "7.10.1"
+  },
+  "type": "module"
 }

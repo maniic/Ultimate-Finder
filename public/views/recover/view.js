@@ -1,5 +1,5 @@
-// VIEW: Recovery ("This isn't what I see"). Go back a step, or report a
 // Owner: (your name here)
+// VIEW: Recovery ("This isn't what I see"). Go back a step, or report a
 // blocked elevator/stairs, say where you are, and get a new route.
 // Prototype Fig. 4.
 // In:  #/recover?b=OI&r=10-210&step=3[&stepfree=1][&stage=where|unsure]

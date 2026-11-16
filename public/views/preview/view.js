@@ -1,5 +1,5 @@
-// VIEW: Route preview. Best entrance, walk time and floor before you leave,
 // Owner: (your name here)
+// VIEW: Route preview. Best entrance, walk time and floor before you leave,
 // plus the step-free switch. Prototype Fig. 2c.
 // In:  #/preview?b=OI&r=10-210[&stepfree=1]
 // Out: #/floorplan?b&f&r  ·  #/navigate?b&r&stepfree&step=1

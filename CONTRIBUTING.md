@@ -1,212 +1,221 @@
 # Working on Ultimate Finder together
 
 How the six of us build this without stepping on each other. The short
-version: **one view each, your own branch, an AI review plus your OK, then
-it merges and deploys.**
+version:
+- one feature each, on your own branch;
+- stay in your feature's files;
+- when you're done, an AI review checks your work, you say "ship it", and
+  it merges and deploys.
+
+For the big picture (architecture, pipeline, caveats), see
+[`docs/kickoff.md`](docs/kickoff.md).
 
 ## The one rule that matters
 
 **Merging into `main` publishes your change to
 <https://ultimate-finder.junaidarshad.com> within about 2 minutes.** There's
-no staging site and no "deploy" button: merging *is* deploying. So:
+no staging site: merging *is* deploying. So:
 
-- Never push directly to `main`. Work on your own branch, and ship it
-  through the review + approval flow ("Shipping your change" below).
-- Only ship what you've run locally.
+- Never push directly to `main`. Work on your branch and ship it through
+  the flow below.
 - Never force-push to `main` or rewrite its history.
 
-If a merge breaks the build or the app won't start, the live site keeps
-running the previous version, so a bad merge can't take it down. But your
-change won't show up until someone merges a fix.
+A broken merge can't take the site down. If the build, the database
+migration or the startup check fails, the live site keeps the previous
+version and your change simply doesn't appear.
 
 ## Setup (once)
+
+You need:
+- **Docker Desktop** (or [OrbStack](https://orbstack.dev) on a Mac, which is
+  lighter);
+- **Git**;
+- **Claude Code**;
+- the **GitHub CLI**, logged in with `gh auth login`;
+- **write access** to this repo (ask `maniic`).
 
 ```bash
 git clone https://github.com/maniic/Ultimate-Finder.git
 cd Ultimate-Finder
-npm install
-npm run dev            # http://localhost:3000
+docker compose up --build        # first run takes a minute or two
 ```
 
-You need **Node 24+** and nothing else. You don't need Docker. There's no
-build step: edit a file in `public/` and refresh the browser.
+Open <http://localhost:3000>. That's the app running with its own local
+Postgres database, set up the same way as the server.
+- Edits to `src/`, `public/` and `prisma/` apply live: refresh the browser.
+- Stop it with `Ctrl+C`, or with `docker compose down`.
+- After someone changes `package.json`, run `docker compose up --build`
+  again.
+- To wipe your local database and start fresh: `docker compose down -v`.
 
-You only ever work in **this repo**. The server side is set up separately,
-and you never need access to it.
+You never need access to the server itself.
 
-## Who does what
+## Features: one each, one folder each
 
-Each of us owns one view, and each view is its own folder under
-`public/views/`:
+| Feature | Its files |
+|---|---|
+| Search | `public/views/search/` |
+| Route preview | `public/views/preview/` |
+| Floor plan | `public/views/floorplan/` |
+| Step-by-step | `public/views/navigate/` |
+| "This isn't what I see" | `public/views/recover/` |
+| Facilities | `public/views/facilities/`, `src/api/facilities.js`, `prisma/schema/facilities.prisma` |
 
-| View | Folder | Open it at |
-|---|---|---|
-| Search | `views/search` | `/#/search` |
-| Route preview | `views/preview` | `/#/preview?b=OI&r=10-210` |
-| Floor plan | `views/floorplan` | `/#/floorplan?b=OI&f=10&r=10-210` |
-| Step-by-step directions | `views/navigate` | `/#/navigate?b=OI&r=10-210&step=1` |
-| "This isn't what I see" | `views/recover` | `/#/recover?b=OI&r=10-210&step=3` |
-| Facilities | `views/facilities` | `/#/facilities` |
+When your feature needs server code or database tables, they get their own
+files too: `src/api/<feature>.js` and `prisma/schema/<feature>.prisma`.
+They're picked up automatically, so you never edit `src/server.js`.
+Facilities' "Report a problem" is the worked example of the whole chain.
 
-**To claim one,** say so in the group chat, then put your name on the
-`// Owner:` line at the top of that view's `view.js` in your first PR. The
-TODO list under it says what to build next. It's taken from our
-think-aloud and heuristic-evaluation findings.
+**To claim a feature,** say so in the group chat, then put your name on the
+`// Owner:` line at the top of its `view.js` in your first PR.
+
+## Stay in your lane (it's enforced)
+
+Everything outside your feature's files is **shared**, because other
+features depend on it:
+- `public/js/*`
+- `public/css/base.css`
+- `public/index.html`
+- `src/server.js`
+- `src/db.js`
+- `prisma/schema/base.prisma`
+- `package.json`
+- `Dockerfile`
+- `compose.yaml`
+
+**Claude Code won't touch a shared file, or anyone else's feature, without
+asking you first.** It tells you which file, what it would change and who
+else it affects. It goes ahead only after you explicitly say yes, and it
+notes that approval in the PR. So when it asks:
+
+- **Think before you say yes.** Could it be done inside your folder
+  instead? (It suggests that when it can.) A change to `base.css` or
+  `ui.js` changes everyone's views.
+- **For bigger shared changes,** like reshaping `public/js/data.js` or
+  adding an npm package, give the group a heads-up in the chat first.
+- **Never import another view's files.** Views talk only through the URL,
+  for example `nav.go('preview', { b: 'OI', r: '10-210' })`.
 
 ## The everyday loop
 
 ```bash
-# 1. Start from the latest main
-git checkout main
-git pull
-
-# 2. Make a branch for this change
-git checkout -b view/facilities          # see "Branch names" below
-
-# 3. Work, committing as you go
-git add -A
-git commit -m "Facilities: sort by distance, add last-checked dates"
-
-# 4. Push your branch (a backup, and visible to the others; deploys nothing)
-git push -u origin view/facilities
+git checkout main && git pull           # start from the latest main
+git checkout -b view/facilities         # your branch (names below)
+docker compose up --build               # run it, then build with Claude Code
+git add -A && git commit -m "Facilities: sort by distance"
+git push -u origin view/facilities      # backup + visible to others; deploys nothing
 ```
 
-Push as often as you like. When you're happy with it, see
-"Shipping your change" below.
-
-### Branch names
+Commit and push your branch as often as you like.
 
 | Kind of change | Branch name | Example |
 |---|---|---|
-| Your view | `view/<view>` | `view/navigate` |
-| A follow-up on your view | `view/<view>-<topic>` | `view/navigate-audio` |
-| Shared files (data, helpers, styles) | `shared/<topic>` | `shared/real-building-list` |
+| Your feature | `view/<feature>` | `view/navigate` |
+| A follow-up on it | `view/<feature>-<topic>` | `view/navigate-audio` |
+| Shared files | `shared/<topic>` | `shared/real-building-list` |
 | Bug fix | `fix/<topic>` | `fix/search-did-you-mean` |
 | Docs only | `docs/<topic>` | `docs/photo-guidelines` |
 
-Keep branches short-lived. A few days is ideal. Small PRs get reviewed
-and merged; giant ones rot.
-
-### Keeping your branch up to date
-
-When `main` moves on (someone else merged), bring it into your branch:
+**Keep up with `main`** while you work, especially before shipping:
 
 ```bash
-git checkout view/facilities
-git fetch origin
-git merge origin/main        # merge, don't rebase, so you never need --force
-git push
+git fetch origin && git merge origin/main && git push   # merge, never rebase, never --force
 ```
-
-If there's a conflict, it's almost always in a shared file. Fix it, run
-the app, commit, and push. If you're unsure, ask the person whose change
-you collided with.
-
-## Stay in your lane (that's how we avoid conflicts)
-
-- **Your view's folder is yours.** Change anything in
-  `public/views/<your-view>/` freely.
-- **Mock data only your view uses** goes in
-  `public/views/<your-view>/data.js`, not the shared `public/js/data.js`.
-- **Shared files are add-only:**
-  - `public/js/data.js`
-  - `public/js/ui.js`
-  - `public/js/floorplan.js`
-  - `public/js/app.js`
-  - `public/css/base.css`
-
-  Adding a new helper, field or style is fine. **Renaming or changing
-  something another view already uses** needs its own small `shared/…` PR,
-  plus a heads-up in the group chat.
-- **Views talk only through the URL.** Example: `nav.go('preview', { b: 'OI', r: '10-210' })`.
-  Don't import another person's view or use global variables.
-- **Photos:** go in `public/img/<your-view>/`.
-  - Resize them to about 1200 px wide and under ~300 KB. Every file makes
-    each deploy slower.
-  - No identifiable people in shots. The repo is public.
-
-## Before you ship: checklist
-
-The AI review covers this too, but it's worth knowing what it checks.
-
-
-- [ ] `main` is merged into your branch, and it still runs: `npm run dev`
-- [ ] You clicked through your view, including the empty and error cases
-      (bad room number, unknown building and so on)
-- [ ] <http://localhost:3000/healthz> says `ok`
-- [ ] Nothing changed outside your folder, unless that was the point of the PR
-- [ ] No passwords, API keys or personal data. The repo is public.
-- [ ] Only if you have Docker and changed `package.json` or the `Dockerfile`
-      (not required): run
-      `docker build -t uf . && docker run --rm --read-only --tmpfs /tmp -p 3000:3000 uf`.
-      That's exactly how the server runs it.
 
 ## Shipping your change
 
-There are no teammate reviews. You decide when your work is ready, and an
-AI review checks it first:
+There are no teammate reviews. You decide when it's ready, and an AI review
+checks it first:
 
-1. **Work on your branch** until you're happy with it. Pushing your branch
-   is always safe: it deploys nothing.
-2. **Tell Claude Code you're done** (for example, "I'm done with this, review
-   it for shipping"). The repo's `CLAUDE.md` makes it:
-   - bring in the latest `main`;
-   - run a **fresh, independent review** of your changes: does it work,
-     does the server still start, did you stay in your folder, no secrets;
-   - go through each finding with you, fixing it or agreeing to skip it.
-3. **Approve it** ("ship it"). Only then does it push, open a PR, merge it
-   into `main` with a merge commit, and check that the live site updated
-   (~2 min).
+1. **Tell Claude Code you're done** (for example, "I'm done, review this
+   for shipping"). It:
+   - merges in the latest `main` and sorts out any conflicts;
+   - runs a **fresh, independent review**: does it work, does it run like
+     production with migrations applied, did it stay in scope (with
+     approvals recorded), and are there no secrets;
+   - goes through each finding with you, fixing it or agreeing to skip it.
+2. **Say "ship it".** Right before merging, it checks **again** whether
+   `main` moved during the review. If it did, it merges that in and
+   re-checks, and asks you again if anything meaningful changed. Then it
+   opens a PR, merges it with a merge commit, and confirms the live site
+   updated.
 
-Not using Claude Code? Go through the checklist above yourself, open a PR,
-and merge it with **"Create a merge commit"** (not squash or rebase).
-Delete the branch afterwards.
+**Not using Claude Code?** Do the same by hand:
+1. merge `origin/main` into your branch;
+2. run the prod-like check (`docker compose --profile prod up -d --build prod`,
+   then <http://localhost:3001/healthz> should say `ok`);
+3. open a PR and merge it with **"Create a merge commit"** (not squash or
+   rebase);
+4. delete the branch.
 
-If your change isn't live ~5 minutes after merging, the server rejected
-it (it failed to build or start), and the old version is still up. Tell
-Junaid, since the logs live on the server.
+If your change isn't live ~5 minutes after merging, the server rejected it.
+The old version is still up. Tell Junaid, since the logs live on the server.
 
-### Something broke on the live site?
+**Something broke on the live site?** Open the merged PR on GitHub, click
+**Revert**, and merge the revert. The previous version is back in about 2
+minutes.
 
-Open the merged PR on GitHub, click **Revert**, and merge the revert PR it
-creates. That deploys the previous code. Then fix it calmly on a new branch.
+## Database & migrations
 
-## Using AI assistants (Claude Code, Copilot, etc.)
+Postgres 17, through Prisma 7. Your local one runs inside
+`docker compose up`. The server has its own, and it's backed up nightly and
+before every migration.
 
-That's welcome. Claude Code reads `CLAUDE.md` in this repo automatically and
-follows the ship flow above: it never touches `main` directly, and it
-merges only after its independent review **and** your explicit approval.
-Read what it wrote before you say "ship it". You're the one approving.
+**Adding or changing tables for your feature:**
+1. Edit **your** schema file, `prisma/schema/<feature>.prisma`, or create it.
+2. Create the migration:
+   `docker compose exec app npx prisma migrate dev --name add_saved_rooms`.
+3. Commit the schema file **and** the new folder under `prisma/migrations/`.
+4. Use the database in `src/api/<feature>.js` via
+   `import { prisma } from '../db.js'`.
+
+**Migration rules** (the server enforces what it can, and the review checks
+the rest):
+- **Additive only:** new tables, new optional columns or columns with a
+  default, new indexes. **No dropping, renaming or retyping.** If a deploy
+  ever rolls back, the old code must still work against the new schema.
+  Need something destructive? Ask Junaid first.
+- **Never edit a migration that's already on `main`.** Make a new one.
+- **If `main` gained migrations while you were working,** Claude regenerates
+  yours so it comes last. By hand: delete your unmerged migration folder, run
+  `docker compose exec app npx prisma migrate reset --force`, then run
+  `migrate dev` again.
+- **Store what users create,** like reports and saved rooms. Campus data
+  (buildings, rooms, routes) stays in the repo as JS/JSON files, so changes
+  to it show up in PRs.
+- **No personal data** (names, emails) without a group decision.
 
 ## External APIs (Google Maps etc.)
 
-Call them **from the browser** (in your view's JS), never from
-`src/server.js`. The server has no internet access, but visitors' browsers
-do. The Google Maps JavaScript API, including walking directions, works
-fine this way.
+The server has **no internet access**, so call external APIs **from the
+browser**, in your view's JS. The Google Maps JavaScript API, including
+walking directions, works fine this way.
 
-A browser API key is visible to anyone who opens the page, so before
-committing one, **restrict it** in Google Cloud Console:
+A browser API key is visible to anyone who opens the page, so it must be
+**restricted** in Google Cloud Console:
 - HTTP referrers: `ultimate-finder.junaidarshad.com/*` and
-  `localhost:3000/*` only;
-- APIs: only the Maps APIs you use.
+  `localhost:3000/*`;
+- APIs: only the Maps APIs we use.
 
-Put it in one place (for example `public/js/config.js`), not scattered
-through views.
+It lives in one shared file, `public/js/config.js`. Adding it is a shared
+change, so expect to be asked.
+
+## Photos
+
+- Put them in `public/img/<feature>/`, resized to about 1200 px wide and
+  under ~300 KB.
+- No identifiable people. The repo is public.
 
 ## Things the server enforces
 
-The server rejects or rolls back a deploy that breaks any of these. Details
-are in `CLAUDE.md` → "The deploy contract".
+The full table is in `CLAUDE.md` → "The deploy contract":
+- port **3000**, and `/healthz` returns 200, which includes the database
+  being reachable;
+- migrations must apply cleanly (`prisma migrate deploy`);
+- a **read-only filesystem**: store data in the database, not files;
+- **no outbound internet** from the server;
+- no `VOLUME`, and no `LABEL` other than `org.opencontainers.image.*`, in
+  the `Dockerfile`.
 
-- The app listens on port **3000**, and `GET /healthz` returns 200.
-- It has **no persistent storage**: the app's filesystem is read-only, apart
-  from a temporary `/tmp`.
-- The server has **no outbound internet access**. Calls from the browser,
-  such as map tiles, are fine.
-- The `Dockerfile` has no `VOLUME`, and no `LABEL` other than
-  `org.opencontainers.image.*`.
-
-Need one of these to change, for example a database or a server-side API
-call? Raise it in your PR or the group chat before building around it. It
-needs a change on the server side.
+Need one of these changed? Raise it in the group chat before building
+around it. It needs a change on the server side.

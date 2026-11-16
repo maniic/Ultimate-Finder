@@ -4,7 +4,7 @@
 > at the end of every working pass: move finished items, record decisions with
 > their why, keep "Next up" honest. Record the current state, not a transcript.
 
-**Last updated:** 2026-11-16 (session 1: scaffold)
+**Last updated:** 2026-11-16 (session 1: scaffold, views, DB + Docker)
 
 ## Current state
 
@@ -40,6 +40,33 @@ design changes on pp. 22–32.
   names as well as codes (done in the starter).
 
 ## Decisions log
+
+- **2026-11-16: Postgres + Prisma 7, Docker for local dev, per-feature files.**
+  Junaid wanted a database and Docker.
+  - The server runs a **dedicated Postgres 17** (not the platform's shared
+    one) in the app's sandbox. It runs `prisma migrate deploy` from the new
+    image before each swap, after a pre-migration dump.
+  - Migrations are **additive only**, because a rollback runs old code
+    against the new schema.
+  - Prisma 7.10.1 is pinned: npm's `latest` tag currently points at an 8.0
+    RC.
+  - The generated client is TypeScript. It loads with no build step via
+    Node 24 type stripping, which is why the package is `"type": "module"`.
+  - **Per-feature files** keep six people from colliding:
+    `prisma/schema/<feature>.prisma` (multi-file schema),
+    `src/api/<feature>.js` (auto-mounted by `server.js`), and
+    `public/views/<feature>/`.
+  - `CLAUDE.md` Rule 1 makes agents stay in scope, and **ask for explicit
+    approval** before touching any shared file.
+  - `compose.yaml` is local only: an app with live reload, Postgres, and a
+    `prod` profile that runs the production image read-only with
+    migrations first.
+  - Facilities' "Report a problem" (`src/api/facilities.js` +
+    `views/facilities/reports.js`) is the worked end-to-end example.
+- **2026-11-16: ship flow re-checks `main` right before merging.** `main`
+  can move during the review. The agent re-fetches it, merges and re-checks
+  if it moved, regenerates its own migration if `main` gained migrations,
+  and requires GitHub to report `MERGEABLE` before `gh pr merge --merge`.
 
 - **2026-11-16: static files are `Cache-Control: no-cache`, not hash-versioned.**
   Without an explicit header, Cloudflare gave JS/CSS a 4-hour browser cache,
