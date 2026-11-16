@@ -114,12 +114,16 @@ and don't skip or reorder them:
    `git fetch origin && git merge origin/main`. Always merge, never rebase.
    - Resolve conflicts *within scope*. If a conflict is in someone else's
      files, keep their version and tell the teammate.
-   - **Migrations:** if `main` gained migrations that aren't on this
-     branch, and this branch has its own new migration, regenerate it so it
-     comes last:
-     1. delete this branch's unmerged migration folder(s);
+   - **Migrations: collapse to one final migration** whenever this branch
+     has more than one new migration (teammates experiment locally: add,
+     then remove…), or `main` gained migrations that aren't on this branch:
+     1. delete all of this branch's unmerged migration folders;
      2. `docker compose exec app npx prisma migrate reset --force`;
-     3. `docker compose exec app npx prisma migrate dev --name <same_name>`.
+     3. `docker compose exec app npx prisma migrate dev --name <what_this_feature_adds>`.
+
+     That way only the net, final change lands on `main`, and it comes
+     after everything already there. Then run
+     `sh scripts/check-migrations.sh --against origin/main`. It must pass.
 3. **Run the pre-ship review.** Spawn a **fresh-context subagent** with real
    tool access, so it runs the commands and reads the files itself rather
    than trusting a summary. It checks:
@@ -130,7 +134,9 @@ and don't skip or reorder them:
      starts read-only. Tear it down afterwards.
    - **Correctness,** including edge cases: an unknown building or room, a
      missing param, a bad API request.
-   - **The deploy contract** below, and **migrations are additive only.**
+   - **The deploy contract** below.
+   - **Migrations:** `sh scripts/check-migrations.sh --against origin/main`
+     passes (additive only, no edits to merged migrations).
    - **Security:** no secrets, personal data or unrestricted API keys.
      DOM is built with `h()`/`append()`, links with `nav.href()`, API input
      is validated, and Prisma queries take no raw SQL with user input.
@@ -173,7 +179,7 @@ The server only uses what's described here. Anything else is ignored.
 | `GET /healthz` returns **200** within ~90s, and again ~5s later with no restart. It returns 503 if the database is unreachable | A failing health check rolls the deploy back. |
 | `./node_modules/.bin/prisma migrate deploy` works inside the image | The server runs it, read-only and with no internet, before every swap. |
 | The server provides `DATABASE_URL`. **Never hardcode a connection string** | Its password exists only on the server. |
-| **Migrations are additive only:** new tables, new nullable or defaulted columns, new indexes. No `DROP`, no renames, no type changes, no new `NOT NULL` without a default | If a deploy rolls back, the *old* code runs against the *new* schema. Destructive changes need a two-step plan; ask Junaid. |
+| **Migrations on `main` are additive only, and merged migrations are never edited or deleted.** **Enforced by the server**: a violating commit isn't deployed at all. Allowed: `CREATE` (tables, indexes, enums…), `ALTER TABLE … ADD COLUMN` (a `NOT NULL` column needs a `DEFAULT`), `ADD CONSTRAINT … FOREIGN KEY`, `ALTER TYPE … ADD VALUE`, `INSERT`, `COMMENT ON`. Rejected: everything else (`DROP`, `RENAME`, `ALTER COLUMN`, `UPDATE`, `DELETE`, `TRUNCATE`, functions…). `scripts/check-migrations.sh` is the same checker, for local use | If a deploy rolls back, the *old* code runs against the *new* schema. A destructive change needs a two-step plan that Junaid approves on the server; ask him. |
 | **Read-only filesystem**, non-root user, only `/tmp` writable (wiped each deploy) | Store data in the database, not files. |
 | **No outbound network** from the server | Call external APIs (Google Maps etc.) from the browser. |
 | **No `LABEL`** except `org.opencontainers.image.*`, and **no `VOLUME`** | The deploy gets rejected. |
@@ -204,6 +210,10 @@ it won't take effect just by merging.
 **Database**
 - One schema file per feature: `prisma/schema/<name>.prisma`.
   `base.prisma` (generator and datasource) is shared.
+- **Locally, anything goes.** Add, change and remove tables freely while
+  developing, and `docker compose down -v` resets everything. Only what
+  ships to `main` must be additive, so collapse experiments into one final
+  migration before shipping (ship flow step 2).
 - Use the `prisma` client from `src/db.js`. Never create another client.
 - Never edit a migration that's already on `main`.
 

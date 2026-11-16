@@ -169,17 +169,40 @@ before every migration.
 4. Use the database in `src/api/<feature>.js` via
    `import { prisma } from '../db.js'`.
 
-**Migration rules** (the server enforces what it can, and the review checks
-the rest):
-- **Additive only:** new tables, new optional columns or columns with a
-  default, new indexes. **No dropping, renaming or retyping.** If a deploy
-  ever rolls back, the old code must still work against the new schema.
-  Need something destructive? Ask Junaid first.
-- **Never edit a migration that's already on `main`.** Make a new one.
-- **If `main` gained migrations while you were working,** Claude regenerates
-  yours so it comes last. By hand: delete your unmerged migration folder, run
-  `docker compose exec app npx prisma migrate reset --force`, then run
-  `migrate dev` again.
+**On your laptop, anything goes.** Add tables, change your mind, remove
+them again. Your local database is yours, and `docker compose down -v`
+wipes it if it gets messy.
+
+**What lands on `main` must only add things. The server enforces this.** A
+merge that breaks these rules is **not deployed at all**, and the site keeps
+the previous version:
+- **Allowed:**
+  - new tables, indexes and enums;
+  - new columns that are optional or have a `DEFAULT`;
+  - new foreign keys;
+  - new enum values;
+  - seed `INSERT`s.
+- **Rejected:** dropping, renaming or retyping anything, `NOT NULL`
+  without a default, `UPDATE`/`DELETE`/`TRUNCATE`, and SQL functions.
+- **Never edit or delete a migration that's already on `main`.** Make a new
+  one.
+- **Why:** if a deploy ever rolls back, the old code must still work against
+  the new schema.
+- **Need something destructive** (like removing a column)? Ask Junaid. It
+  takes two steps, and he approves the second one on the server.
+
+**Before shipping, collapse your experiments into one migration.** If you
+added a table and later removed it, your branch has two migrations, and the
+"remove" one would be rejected. Claude does this for you in the ship flow.
+By hand:
+1. delete your branch's unmerged migration folders;
+2. `docker compose exec app npx prisma migrate reset --force`;
+3. `docker compose exec app npx prisma migrate dev --name what_my_feature_adds`.
+
+This also puts your migration after any new ones from `main`.
+
+**Check it yourself** (the same checker the server uses):
+`sh scripts/check-migrations.sh --against origin/main`
 - **Store what users create,** like reports and saved rooms. Campus data
   (buildings, rooms, routes) stays in the repo as JS/JSON files, so changes
   to it show up in PRs.

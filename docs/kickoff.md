@@ -169,10 +169,15 @@ and it mirrors the server: same Node, same Postgres, same migrations.
   ~5 min, tell Junaid: the error logs are on the server.
 
 ### 🗄️ Database rules
-- **Migrations are additive only:** add tables and columns, never drop,
-  rename or retype them. If a deploy rolls back, the old code must still
-  work.
-- **Never edit a migration that's already on `main`.** Make a new one.
+- **On your laptop, anything goes.** Experiment freely; `docker compose down -v`
+  resets your local database.
+- **On `main`, migrations may only add things. The server enforces it.**
+  - **Allowed:** new tables, columns, indexes and enum values.
+  - **Never:** dropping, renaming or retyping, or editing a migration
+    that's already merged.
+  - A merge that breaks this simply isn't deployed. Before shipping, your
+    experiments get collapsed into one final migration (Claude does it).
+  - Check with `sh scripts/check-migrations.sh --against origin/main`.
 - **The database is for what users create** (reports, saved rooms). Campus
   data (buildings, rooms, routes) stays in the repo as files.
 - **No personal data** (names, emails) without a group decision.
