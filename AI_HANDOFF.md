@@ -10,7 +10,7 @@
 
 Scaffolded: an Express server (`src/server.js`) on port 3000 serving a
 placeholder page from `public/`, with `GET /healthz` for the deploy health
-check, a `Dockerfile` (node:20-alpine, `npm ci`, runs as `node`), and
+check, a `Dockerfile` (node:24-alpine, `npm ci`, runs as `node`), and
 `CLAUDE.md` describing the auto-deploy rules and the deploy contract.
 
 No product code yet. The design work lives in `submitted_docs/` (formative

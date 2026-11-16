@@ -21,9 +21,10 @@ branches and pull requests. `submitted_docs/` holds course deliverables
 **Anything that lands on `main` is live at
 <https://ultimate-finder.junaidarshad.com> within about two minutes, with no
 human step.** A server polls this repo's `main`, builds the `Dockerfile` at the
-new commit, health-checks it, and swaps it in. If the build or the health check
-fails, the previous version keeps serving and the failed commit is not
-retried. Pushing a new commit is the only way to retry.
+new commit, health-checks it, and swaps it in. If the build fails or the image
+is rejected, the previous version keeps serving. If the new version starts but
+fails its health check, it's live for up to ~90s before being rolled back. A
+failed commit isn't retried: pushing a new commit is the only way to retry.
 
 Rules that follow from this (they apply to humans and AI agents alike):
 
@@ -45,10 +46,11 @@ The server only uses what's described here. Anything else is ignored.
 |---|---|
 | `Dockerfile` at the repo root builds with plain `docker build .` | It's the only build instruction the server follows. |
 | The container listens on **port 3000** | The reverse proxy in front of it expects 3000. |
-| `GET /healthz` returns **200** within ~90s of starting | A failing health check rolls the deploy back. |
+| `GET /healthz` returns **200** within ~90s of starting, and keeps returning 200 (no crash or restart) across a re-check ~5s later | A failing health check rolls the deploy back. |
 | The app runs on a **read-only filesystem** as a non-root user; only `/tmp` is writable (wiped on every deploy) | Persistent state needs a different design. Talk to Junaid first. |
 | The server has **no outbound network access** at runtime | Server-side calls to external APIs fail. Browser-side calls (map tiles, client-side APIs) work. Talk to Junaid if the server needs to call out. |
-| **No `LABEL` instructions** in the `Dockerfile` that mention `traefik` or `com.docker` | Deploys with such labels are rejected outright. |
+| **No `LABEL`** instructions, except `org.opencontainers.image.*` | Any other label gets the deploy rejected. |
+| **No `VOLUME`** instructions | The deploy gets rejected. There's no persistent storage. |
 | A `docker-compose.yml` in this repo is **not used** | The server runs its own. Add one for local dev if you like. |
 
 Changing any of these means a change on the server side too. Raise it with
