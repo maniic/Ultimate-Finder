@@ -1,0 +1,3 @@
+.view-floorplan details summary { cursor: pointer; font-weight: 600; }
+.view-floorplan .chips { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+.view-floorplan .chip { flex: none; }

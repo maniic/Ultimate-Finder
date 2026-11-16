@@ -1,0 +1,6 @@
+.view-preview .facts { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; text-align: center; }
+.view-preview .facts dt { font-size: 0.8rem; color: var(--muted); }
+.view-preview .facts dd { margin: 0; font-size: 1.25rem; font-weight: 700; }
+.view-preview .switch-row { flex-direction: row; align-items: flex-start; gap: 12px; cursor: pointer; }
+.view-preview .switch-row input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+.view-preview .block { display: block; }

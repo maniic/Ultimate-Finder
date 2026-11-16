@@ -12,7 +12,7 @@
 
 Ultimate Finder is a CSC318 (U of T) group project: a wayfinding prototype for
 the St. George campus. It's a Node.js + Express server on port 3000 that
-serves a static frontend from `public/`. Several classmates contribute through
+serves a static frontend from `public/` (plain ES modules, no build step). Several classmates contribute through
 branches and pull requests. `submitted_docs/` holds course deliverables
 (research, concepts, experience maps) and is not part of the app.
 
@@ -55,6 +55,24 @@ The server only uses what's described here. Anything else is ignored.
 
 Changing any of these means a change on the server side too. Raise it with
 Junaid in the PR; it won't take effect just by merging.
+
+## App structure: one folder per view
+
+`README.md` has the layout, the view/owner table and the branch workflow.
+The short version for agents:
+
+- Each screen is `public/views/<name>/view.js` (exports
+  `render(root, params, nav)`) plus `view.css` (scoped under `.view-<name>`).
+  Views share state **only through URL params**: no globals, no
+  cross-view imports. That keeps one person's branch from breaking another's.
+- A teammate's branch `view/<name>` should normally touch only that folder.
+  Shared files (`public/js/{app,ui,data,floorplan}.js`, `public/css/base.css`)
+  are add-only in feature branches. Don't rename or reshape what other views
+  use, and propose changes like that in a separate PR.
+- Build DOM with `h()` / `append()` from `public/js/ui.js`, never
+  `innerHTML` with data.
+- `public/js/data.js` is mock data. Keep the "not verified on site" caveat
+  until it's replaced with real, checked data.
 
 ## Hard rules
 

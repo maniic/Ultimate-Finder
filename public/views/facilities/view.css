@@ -1,0 +1,7 @@
+.view-facilities .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.view-facilities .type { text-decoration: none; color: var(--text); font-weight: 600; min-height: 72px; justify-content: center; }
+.view-facilities .type:hover, .view-facilities .result:hover { border-color: var(--accent); }
+.view-facilities .results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.view-facilities .result { text-decoration: none; color: var(--text); gap: 4px; }
+.view-facilities .row { display: flex; justify-content: space-between; }
+.view-facilities .plan-mini { max-height: 160px; }
