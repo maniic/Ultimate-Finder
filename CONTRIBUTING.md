@@ -178,12 +178,17 @@ merge that breaks these rules is **not deployed at all**, and the site keeps
 the previous version:
 - **Allowed:**
   - new tables, indexes and enums;
-  - new columns that are optional or have a `DEFAULT`;
+  - new columns that are optional or have a constant `DEFAULT`;
   - new foreign keys;
-  - new enum values;
-  - seed `INSERT`s.
-- **Rejected:** dropping, renaming or retyping anything, `NOT NULL`
-  without a default, `UPDATE`/`DELETE`/`TRUNCATE`, and SQL functions.
+  - new enum values.
+- **Rejected:**
+  - dropping, renaming or retyping anything;
+  - `NOT NULL` without a default;
+  - a `UNIQUE` index on a table that already exists;
+  - `INSERT`/`UPDATE`/`DELETE`;
+  - SQL functions, triggers and views.
+- **Seed data** (like the campus data) lives in the repo as files, not in
+  migrations.
 - **Never edit or delete a migration that's already on `main`.** Make a new
   one.
 - **Why:** if a deploy ever rolls back, the old code must still work against
@@ -203,6 +208,11 @@ This also puts your migration after any new ones from `main`.
 
 **Check it yourself** (the same checker the server uses):
 `sh scripts/check-migrations.sh --against origin/main`
+
+**If a rejected migration already got merged,** every later deploy is
+blocked until it's fixed. Ship a new commit that deletes that unmerged
+migration folder (it never reached the database), or replaces it with an
+additive version.
 - **Store what users create,** like reports and saved rooms. Campus data
   (buildings, rooms, routes) stays in the repo as JS/JSON files, so changes
   to it show up in PRs.

@@ -172,7 +172,8 @@ and it mirrors the server: same Node, same Postgres, same migrations.
 - **On your laptop, anything goes.** Experiment freely; `docker compose down -v`
   resets your local database.
 - **On `main`, migrations may only add things. The server enforces it.**
-  - **Allowed:** new tables, columns, indexes and enum values.
+  - **Allowed:** new tables, columns, indexes and enum values. (Seed data
+    lives in repo files, not migrations.)
   - **Never:** dropping, renaming or retyping, or editing a migration
     that's already merged.
   - A merge that breaks this simply isn't deployed. Before shipping, your
