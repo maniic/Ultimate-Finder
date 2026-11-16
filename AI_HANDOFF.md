@@ -45,10 +45,14 @@ design changes on pp. 22–32.
   Without an explicit header, Cloudflare gave JS/CSS a 4-hour browser cache,
   so people kept running old views after a merge. The platform's usual fix,
   `?v=<hash>` on the assets the HTML references (home-infra
-  `asset-cache-versioning` skill), can't reach ES-module `import`s between
-  files without a build step. Revalidating every load with ETags costs one
-  304 per file, which is fine for a small prototype that changes often.
-  Revisit if a build step is ever added.
+  `asset-cache-versioning` skill), would need an import map or a build step
+  to reach ES-module `import`s. Revalidating with ETags costs one 304 per
+  module per page load (about 11 files), which is fine for a small
+  prototype that changes often. Known edge case: a tab left open across a
+  deploy keeps the old shared modules in memory, so a newly opened view
+  that imports a new shared export can fail until the page is reloaded.
+  `app.js` shows a render-error message in that case. Revisit if a build
+  step is ever added.
 
 - **2026-11-16: no build step; one folder per view; URL-only coupling.** Six
   people work in parallel, so the structure minimises merge conflicts: each
