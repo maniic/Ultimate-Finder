@@ -37,15 +37,18 @@ for (const file of readdirSync(apiDir).filter((f) => f.endsWith('.js') && !f.sta
 }
 app.use('/api', (_req, res) => res.status(404).json({ error: 'not found' }));
 
-// Every static file is served `no-cache`: browsers may keep a copy but must
-// revalidate it (a cheap 304 via ETag) once per page load. Without an
-// explicit header, Cloudflare stamps JS/CSS with a 4-hour browser cache, so
-// after a merge people would keep running the old views for hours. A `?v=`
-// hash scheme would need an import map or a build step to reach the
-// ES-module imports. That's not worth it for a small prototype that changes
-// often.
+// Every static file is served `no-store`, so browsers always fetch the
+// current version. Cloudflare's Browser Cache TTL otherwise stamps JS/CSS
+// with a 4-hour cache, and after a merge people would keep running the old
+// views for hours. `no-cache` was tried first and verified on 2026-11-16 to
+// be overridden by Cloudflare. `no-store` passes through (as on the
+// platform's notepad app). It costs re-downloading a dozen small files per
+// load, which is fine at this size. A `?v=` hash scheme would need an import
+// map or a build step to reach the ES-module imports.
 app.use(express.static(path.join(__dirname, '..', 'public'), {
-  setHeaders: (res) => res.set('Cache-Control', 'no-cache'),
+  etag: false,
+  lastModified: false,
+  setHeaders: (res) => res.set('Cache-Control', 'no-store'),
 }));
 
 // Last-resort error handler: log it, never leak stack traces to users.

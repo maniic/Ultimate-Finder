@@ -71,19 +71,16 @@ design changes on pp. 22–32.
   if it moved, regenerates its own migration if `main` gained migrations,
   and requires GitHub to report `MERGEABLE` before `gh pr merge --merge`.
 
-- **2026-11-16: static files are `Cache-Control: no-cache`, not hash-versioned.**
-  Without an explicit header, Cloudflare gave JS/CSS a 4-hour browser cache,
-  so people kept running old views after a merge. The platform's usual fix,
-  `?v=<hash>` on the assets the HTML references (home-infra
-  `asset-cache-versioning` skill), would need an import map or a build step
-  to reach ES-module `import`s. Revalidating with ETags costs one 304 per
-  module per page load (about 11 files), which is fine for a small
-  prototype that changes often. Known edge case: a tab left open across a
-  deploy keeps the old shared modules in memory, so a newly opened view
-  that imports a new shared export can fail until the page is reloaded.
-  `app.js` shows a render-error message in that case. Revisit if a build
-  step is ever added.
-
+- **2026-11-16: static files are `Cache-Control: no-store`.** Without an
+  explicit header, Cloudflare gave JS/CSS a 4-hour browser cache, so people
+  kept running old views after a merge.
+  - `no-cache` was shipped first (PR #3), and the live headers showed
+    Cloudflare still rewrote it to `max-age=14400`. `no-store` passes
+    through (as on the platform's notepad app).
+  - `?v=<hash>` versioning (the home-infra `asset-cache-versioning` skill)
+    would need an import map or a build step to reach ES-module `import`s.
+  - Cost: about 11 small files re-downloaded per page load. Revisit if a
+    build step is ever added.
 - **2026-11-16: no build step; one folder per view; URL-only coupling.** Six
   people work in parallel, so the structure minimises merge conflicts: each
   screen lives in its own folder, and views pass state only through the
