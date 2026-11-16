@@ -209,14 +209,17 @@ This also puts your migration after any new ones from `main`.
 **Check it yourself** (the same checker the server uses):
 `sh scripts/check-migrations.sh --against origin/main`
 
-**If a rejected migration already got merged,** every later deploy is
-blocked until it's fixed. Ship a new commit that deletes that unmerged
-migration folder (it never reached the database), or replaces it with an
-additive version.
+**Also:**
+
 - **Store what users create,** like reports and saved rooms. Campus data
   (buildings, rooms, routes) stays in the repo as JS/JSON files, so changes
   to it show up in PRs.
 - **No personal data** (names, emails) without a group decision.
+
+**If a rejected migration already got merged,** every later deploy is
+blocked until it's fixed. Ship a new commit that deletes that unmerged
+migration folder (it never reached the database), or replaces it with an
+additive version.
 
 ## External APIs (Google Maps etc.)
 
