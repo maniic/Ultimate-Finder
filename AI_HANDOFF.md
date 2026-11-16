@@ -8,19 +8,22 @@
 
 ## Current state
 
-Scaffolded: an Express server (`src/server.js`) on port 3000 serving a
-placeholder page from `public/`, with `GET /healthz` for the deploy health
-check, a `Dockerfile` (node:24-alpine, `npm ci`, runs as `node`), and
-`CLAUDE.md` describing the auto-deploy rules and the deploy contract.
+**Live** at <https://ultimate-finder.junaidarshad.com>, auto-deployed from `main`.
 
-**App shell + six starter views** (branch `app-shell`): a hash router, shared
-`h()` helpers, mock OISE data, and an SVG floor-plan renderer. There's one
-folder per prototype screen: search, preview, floorplan, navigate, recover
-and facilities. Each is a working, phone-first view of the paper-prototype
-flow (OISE 10-210), and each `view.js` starts with a TODO list taken from
-the evaluation findings. The views were smoke-tested by screenshotting
-every route in headless Chrome. `README.md` has the owner table and the
-branch workflow.
+- **App:** a hash-routed, phone-first frontend with six feature folders
+  under `public/views/` (search, preview, floorplan, navigate, recover,
+  facilities). They run on mock OISE data in `public/js/data.js`.
+- **Server:** Express (ES modules) serving `public/` with `no-cache`,
+  `/healthz` (which checks the DB), and auto-mounted `src/api/<feature>.js`
+  routes.
+- **Database:** Postgres 17 via Prisma 7.10.1. The schema is split per
+  feature in `prisma/schema/`, with an init migration. Facilities' "Report
+  a problem" saves to the database end to end.
+- **Local development:** `docker compose up` (`compose.yaml`) runs the app
+  plus Postgres, with a `prod` profile for prod-like checks.
+- **Team docs:** `CONTRIBUTING.md` (workflow) and `docs/kickoff.md`
+  (overview with diagrams). `CLAUDE.md` holds the agent rules: scope plus
+  explicit approval for shared files, and the ship flow.
 
 The design work lives in `submitted_docs/`. The chosen direction is in
 `Ultimate Finder_ Prototyping Wayfinding at U of T (4).pdf`: an interactive

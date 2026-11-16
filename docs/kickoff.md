@@ -54,7 +54,7 @@ flowchart LR
         DNS["ultimate-finder.junaidarshad.com<br/>HTTPS"]
     end
 
-    subgraph AIR["Junaid's home server"]
+    subgraph AIR["Our server"]
         T["Cloudflare Tunnel<br/>+ Traefik router"]
         subgraph BOX["Our sandbox: no internet, can't reach anything else"]
             P["nginx proxy"]

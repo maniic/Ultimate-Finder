@@ -2,7 +2,7 @@ node_modules/
 .env
 .DS_Store
 npm-debug.log*
-# Prisma client, regenerated from prisma/schema.prisma
+# Prisma client, regenerated from prisma/schema/
 generated/
 # AI-agent files that `prisma init` drops; not ours
 .agents/

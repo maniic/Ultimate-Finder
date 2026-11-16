@@ -8,7 +8,11 @@
 //   POST /api/facility-reports  { facilityId, problem, note? }
 //
 // It's public and unauthenticated, so inputs are validated and posts are
-// rate-limited per visitor.
+// rate-limited per visitor and overall.
+//
+// TODO (team decision): notes are free text from anonymous visitors, shown to
+// everyone. Consider hiding them, or checking facilityId against real
+// facility IDs once campus data is real.
 
 import { Router } from 'express';
 import { prisma } from '../db.js';
@@ -16,19 +20,38 @@ import { prisma } from '../db.js';
 export const PROBLEMS = ['not-working', 'dirty', 'missing', 'other'];
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
-// Tiny in-memory rate limit: 5 reports per visitor per 10 minutes. Cloudflare
-// sets CF-Connecting-IP to the real visitor's IP. Resets on each deploy.
+// In-memory rate limits (they reset on each deploy):
+//   - per visitor: 5 reports per 10 minutes. IPv6 addresses are grouped by
+//     /64, since one person usually controls a whole /64.
+//   - overall: 200 reports per hour, so spread-out spam can't fill the
+//     database.
+// Cloudflare sets CF-Connecting-IP to the real visitor's IP, and the server
+// is reachable only through Cloudflare.
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_PER_WINDOW = 5;
-const hits = new Map();
+const GLOBAL_WINDOW_MS = 60 * 60 * 1000;
+const GLOBAL_MAX = 200;
+const MAX_TRACKED = 10000;
+const hits = new Map();   // visitor key -> timestamps (Map keeps insertion order)
+let globalHits = [];
+
+function visitorKey(req) {
+  const ip = req.get('cf-connecting-ip') || req.socket.remoteAddress || 'unknown';
+  return ip.includes(':') ? ip.split(':').slice(0, 4).join(':') + '::/64' : ip;
+}
+
 function rateLimited(req) {
-  const key = req.get('cf-connecting-ip') || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
+  globalHits = globalHits.filter((t) => now - t < GLOBAL_WINDOW_MS);
+  if (globalHits.length >= GLOBAL_MAX) return true;
+  const key = visitorKey(req);
   const recent = (hits.get(key) || []).filter((t) => now - t < WINDOW_MS);
-  if (recent.length >= MAX_PER_WINDOW) { hits.set(key, recent); return true; }
+  if (recent.length >= MAX_PER_WINDOW) return true;
   recent.push(now);
+  hits.delete(key);          // re-insert so it counts as most recently used
   hits.set(key, recent);
-  if (hits.size > 10000) hits.clear(); // crude memory cap
+  while (hits.size > MAX_TRACKED) hits.delete(hits.keys().next().value); // evict oldest, never clear all
+  globalHits.push(now);
   return false;
 }
 

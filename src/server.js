@@ -20,13 +20,19 @@ app.get('/healthz', async (_req, res) => {
 
 // JSON API. Every file in src/api/ exports `path` and `router`, and is mounted
 // at /api/<path>, so features add endpoints without touching this file.
+// Helper files that aren't routes start with an underscore (src/api/_util.js).
 app.use('/api', express.json({ limit: '4kb' }));
 const apiDir = path.join(__dirname, 'api');
-for (const file of readdirSync(apiDir).filter((f) => f.endsWith('.js')).sort()) {
+const mounted = new Map();
+for (const file of readdirSync(apiDir).filter((f) => f.endsWith('.js') && !f.startsWith('_')).sort()) {
   const mod = await import(pathToFileURL(path.join(apiDir, file)).href);
   if (typeof mod.path !== 'string' || !/^[a-z0-9-]+$/.test(mod.path) || !mod.router) {
-    throw new Error(`src/api/${file} must export \`path\` (lowercase-with-dashes) and \`router\``);
+    throw new Error(`src/api/${file} must export \`path\` (lowercase-with-dashes) and \`router\` (helpers: name them _something.js)`);
   }
+  if (mounted.has(mod.path)) {
+    throw new Error(`src/api/${file} and src/api/${mounted.get(mod.path)} both use path "${mod.path}"`);
+  }
+  mounted.set(mod.path, file);
   app.use(`/api/${mod.path}`, mod.router);
 }
 app.use('/api', (_req, res) => res.status(404).json({ error: 'not found' }));

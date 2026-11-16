@@ -1,5 +1,5 @@
 // Prisma CLI config (Prisma 7). DATABASE_URL comes from the environment:
-// compose.dev.yml sets it locally, and the server sets it in production.
+// compose.yaml sets it locally, and the server sets it in production.
 // Never put a real connection string in this file. The repo is public.
 import { defineConfig } from 'prisma/config';
 
