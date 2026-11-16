@@ -1,0 +1,6 @@
+.git
+node_modules
+npm-debug.log
+.env
+submitted_docs
+*.md
