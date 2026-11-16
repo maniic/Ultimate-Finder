@@ -1,4 +1,5 @@
 // VIEW: Search. Building (name or code) + room number. Prototype Fig. 2a/2b.
+// Owner: (your name here)
 // In:  #/search?b=OI&r=10-210   (optional, pre-fills the form)
 // Out: #/preview?b=<code>&r=<room>
 //
@@ -21,7 +22,7 @@ export function render(root, params, nav) {
     value: chosen ? chosen.name : '', 'aria-describedby': 'building-hint',
   });
   const roomInput = h('input', { type: 'text', id: 'room', placeholder: 'e.g. 10-210', value: params.r || '', autocomplete: 'off' });
-  const suggestions = h('ul', { class: 'suggestions', role: 'listbox', 'aria-label': 'Matching buildings' });
+  const suggestions = h('ul', { class: 'suggestions', 'aria-label': 'Matching buildings' });
   const message = h('p', { class: 'message', role: 'status' });
 
   function showSuggestions() {
@@ -51,6 +52,11 @@ export function render(root, params, nav) {
     if (!chosen) {
       const matches = searchBuildings(text);
       if (matches.length === 1) chosen = matches[0];
+    }
+    if (!chosen && searchBuildings(text).length > 1) {
+      message.textContent = 'Several buildings match. Pick one from the list.';
+      showSuggestions();
+      return;
     }
     if (!chosen) {
       const guess = didYouMean(text);

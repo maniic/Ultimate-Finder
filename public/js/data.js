@@ -26,17 +26,19 @@ export const ENTRANCES = {
 
 // Floor plans: rooms + landmarks per building/floor.
 // kind: room | elevator | stairs | washroom | facility | entrance | corridor
+// label = text drawn on the plan; name (optional) = longer accessible name;
+// labelY (optional) = where to draw the label instead of the box centre.
 export const FLOORS = {
   OI: {
     1: [
       { id: 'corridor', kind: 'corridor', x: 5, y: 26, w: 90, h: 8 },
-      { id: 'lobby', label: 'Main lobby', kind: 'room', x: 35, y: 36, w: 30, h: 18 },
-      { id: 'desk', label: 'Lobby desk', kind: 'facility', x: 45, y: 40, w: 10, h: 5 },
+      { id: 'lobby', label: 'Main lobby', kind: 'room', x: 35, y: 36, w: 30, h: 18, labelY: 40 },
+      { id: 'desk', label: 'Lobby desk', kind: 'facility', x: 43, y: 47, w: 14, h: 5 },
       { id: 'elev-ab', label: 'Elevators A/B', kind: 'elevator', x: 44, y: 10, w: 12, h: 14 },
       { id: 'elev-c', label: 'Elevator C', kind: 'elevator', x: 84, y: 10, w: 9, h: 14 },
       { id: 'stairs-w', label: 'Stairs', kind: 'stairs', x: 6, y: 10, w: 9, h: 14 },
-      { id: 'ent-a', label: 'Entrance A', kind: 'entrance', x: 40, y: 55, w: 12, h: 5 },
-      { id: 'ent-b', label: 'Entrance B', kind: 'entrance', x: 0, y: 27, w: 5, h: 6 },
+      { id: 'ent-a', label: 'A', name: 'Entrance A', kind: 'entrance', x: 40, y: 55, w: 12, h: 5 },
+      { id: 'ent-b', label: 'B', name: 'Entrance B', kind: 'entrance', x: 0, y: 27, w: 5, h: 6 },
       { id: 'east-wing', label: 'East wing', kind: 'room', x: 70, y: 36, w: 25, h: 18 },
     ],
     10: [
@@ -150,7 +152,8 @@ export function getRoom(code, number) {
 
 export function getRoute(code, number, variant = 'standard') {
   const r = ROUTES[`${String(code || '').toUpperCase()}:${number}`];
-  return r ? r[variant] : undefined;
+  // Own-property check: `variant` can come from the URL (?alt=constructor).
+  return r && Object.hasOwn(r, variant) && r[variant]?.steps ? r[variant] : undefined;
 }
 
 export function getEntrance(code, id) {

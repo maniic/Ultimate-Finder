@@ -1,4 +1,5 @@
 // VIEW: Facilities. Pick an exact type (bottle filler, not just "water"), see
+// Owner: (your name here)
 // the nearest ones with walk time and whether they're working, then details.
 // Prototype Fig. 5; screen-level storyboard 3.
 // In:  #/facilities  ·  #/facilities?type=bottle-filler  ·  ...&id=f1
@@ -51,7 +52,9 @@ export function render(root, params, nav) {
           h('p', { class: 'muted small' }, `About ${minutes(f.walkMin)} away.`)),
         h('div', { class: 'btn-row' },
           h('button', { class: 'btn', disabled: true, title: 'Not built yet' }, 'Report a problem'),
-          h('a', { class: 'btn btn-primary', href: nav.href('floorplan', { b: f.building, f: f.floor }) }, 'Show on floor plan')),
+          FLOORS[f.building]?.[f.floor]
+            ? h('a', { class: 'btn btn-primary', href: nav.href('floorplan', { b: f.building, f: f.floor }) }, 'Show on floor plan')
+            : h('button', { class: 'btn', disabled: true }, 'No floor plan yet')),
       );
       return;
     }
@@ -66,7 +69,7 @@ export function render(root, params, nav) {
     h('h1', null, `Nearest ${typeName.toLowerCase()}`),
     floorsWith.length ? h('p', { class: 'muted small' }, `On floors: ${floorsWith.join(', ')}`) : null,
     planItems
-      ? drawPlan(planItems, { mini: true, pins: list.filter((f) => f.floor === nearest.floor && f.building === nearest.building) })
+      ? drawPlan(planItems, { mini: true, label: `Floor ${nearest.floor} map with ${typeName.toLowerCase()} locations`, pins: list.filter((f) => f.floor === nearest.floor && f.building === nearest.building) })
       : null,
     list.length
       ? h('ul', { class: 'results' }, list.map((f) =>

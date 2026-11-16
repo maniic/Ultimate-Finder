@@ -12,8 +12,8 @@
 
 Ultimate Finder is a CSC318 (U of T) group project: a wayfinding prototype for
 the St. George campus. It's a Node.js + Express server on port 3000 that
-serves a static frontend from `public/` (plain ES modules, no build step). Several classmates contribute through
-branches and pull requests. `submitted_docs/` holds course deliverables
+serves a static frontend from `public/` (plain ES modules, no build step).
+Several classmates contribute through branches and pull requests. `submitted_docs/` holds course deliverables
 (research, concepts, experience maps) and is not part of the app.
 
 ## `main` is production — every merge auto-deploys
@@ -70,7 +70,11 @@ The short version for agents:
   are add-only in feature branches. Don't rename or reshape what other views
   use, and propose changes like that in a separate PR.
 - Build DOM with `h()` / `append()` from `public/js/ui.js`, never
-  `innerHTML` with data.
+  `innerHTML` with data. `h()` doesn't check `href`/`src`, so in-app links
+  go through `nav.href()`, and URL params or user input never go into an
+  `href`/`src` directly.
+- View-only mock data lives in `public/views/<name>/data.js`. Teammates
+  claim a view with the `// Owner:` line in its `view.js`.
 - `public/js/data.js` is mock data. Keep the "not verified on site" caveat
   until it's replaced with real, checked data.
 

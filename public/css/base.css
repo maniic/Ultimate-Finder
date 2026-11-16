@@ -100,6 +100,7 @@ input:focus-visible, .btn:focus-visible, a:focus-visible, [tabindex]:focus-visib
 .kind-washroom rect { fill: #dbeee0; }
 .kind-facility rect { fill: #f3e3f0; }
 .kind-entrance rect { fill: var(--accent); }
+.kind-entrance text { fill: var(--on-accent); font-weight: 700; }
 .is-highlight rect { fill: var(--highlight); stroke: var(--text); stroke-width: 0.6; }
 .plan-path { fill: none; stroke: var(--accent); stroke-width: 1; stroke-dasharray: 2 1.2; stroke-linecap: round; }
 .plan-marker { fill: var(--bad); stroke: var(--surface); stroke-width: 0.6; }
@@ -111,6 +112,10 @@ input:focus-visible, .btn:focus-visible, a:focus-visible, [tabindex]:focus-visib
   .kind-stairs rect { fill: #4a3f2c; }
   .kind-washroom rect { fill: #24432f; }
   .kind-facility rect { fill: #44283f; }
+  .swatch.kind-elevator { background: #24415a; }
+  .swatch.kind-stairs { background: #4a3f2c; }
+  .swatch.kind-washroom { background: #24432f; }
+  .swatch.kind-facility { background: #44283f; }
 }
 .plan-legend { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 6px 8px; margin: 0; font-size: 0.85rem; align-items: center; }
 .plan-legend dd { margin: 0; }

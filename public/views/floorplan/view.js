@@ -1,4 +1,5 @@
 // VIEW: Floor plan. Browse a building floor by floor, see the destination
+// Owner: (your name here)
 // highlighted and the route from the elevator, and tap rooms/facilities.
 // Prototype Fig. 2c ("Show floor plan"); design concept 3.
 // In:  #/floorplan?b=OI&f=10[&r=10-210][&stepfree=1]
@@ -24,7 +25,12 @@ export function render(root, params, nav) {
   }
   const floors = Object.keys(FLOORS[building.code]).map(Number).sort((a, b) => a - b);
   const room = getRoom(building.code, params.r);
-  const floor = floors.includes(Number(params.f)) ? Number(params.f) : (room ? room.floor : floors[0]);
+  if (params.f && !floors.includes(Number(params.f))) {
+    append(root, backLink(nav.href('search'), 'Search'),
+      h('p', null, `No floor plan for ${building.code} floor ${params.f} yet. Plans so far: floors ${floors.join(', ')}.`));
+    return;
+  }
+  const floor = params.f ? Number(params.f) : (room ? room.floor : floors[0]);
   const items = FLOORS[building.code][floor];
 
   // Route on the destination floor: from the elevator, along the corridor, to the door.
@@ -36,10 +42,10 @@ export function render(root, params, nav) {
     path = [[elevator.x + elevator.w / 2, elevator.y + elevator.h], [elevator.x + elevator.w / 2, cy], [target.x + target.w / 2, cy], [target.x + target.w / 2, target.y]];
   }
 
-  const info = h('p', { class: 'muted small', role: 'status' }, room ? `${room.number} is highlighted.` : 'Tap a room or facility.');
+  const info = h('p', { class: 'muted small', role: 'status' }, room && room.floor === floor ? `${room.number} is highlighted.` : room ? `${room.number} is on floor ${room.floor}.` : 'Tap a room or facility.');
   const plan = drawPlan(items, {
     highlight: room?.number, path,
-    onSelect: (it) => { info.textContent = `${it.label || it.id}${it.kind !== 'room' ? ` (${it.kind})` : ''}`; },
+    onSelect: (it) => { info.textContent = `${it.name || it.label || it.id}${it.kind !== 'room' ? ` (${it.kind})` : ''}`; },
   });
 
   const keep = { b: building.code, r: room?.number, stepfree: params.stepfree };

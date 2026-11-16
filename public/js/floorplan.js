@@ -12,10 +12,12 @@ function s(tag, attrs, ...children) {
   return el;
 }
 
-export function drawPlan(items, { highlight, path, marker, pins = [], mini = false, onSelect } = {}) {
+export function drawPlan(items, { highlight, path, marker, pins = [], mini = false, onSelect, label } = {}) {
   const svg = s('svg', {
-    viewBox: '0 0 100 60', class: `plan${mini ? ' plan-mini' : ''}`, role: 'img',
-    'aria-label': mini ? 'Mini map of your position on the route' : 'Floor plan',
+    viewBox: '0 0 100 60', class: `plan${mini ? ' plan-mini' : ''}`,
+    // role=img would hide the clickable rooms from screen readers.
+    role: onSelect ? 'group' : 'img',
+    'aria-label': label || (mini ? 'Mini map of your position on the route' : 'Floor plan'),
   });
   svg.append(s('rect', { x: 0, y: 0, width: 100, height: 60, class: 'plan-bg' }));
 
@@ -24,12 +26,12 @@ export function drawPlan(items, { highlight, path, marker, pins = [], mini = fal
     const g = s('g', { class: `plan-item kind-${it.kind}${selected ? ' is-highlight' : ''}` });
     g.append(s('rect', { x: it.x, y: it.y, width: it.w, height: it.h, rx: 0.8 }));
     if (it.label && !mini) {
-      g.append(s('text', { x: it.x + it.w / 2, y: it.y + it.h / 2, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, it.label));
+      g.append(s('text', { x: it.x + it.w / 2, y: it.labelY ?? it.y + it.h / 2, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, it.label));
     }
     if (onSelect && it.kind !== 'corridor') {
       g.setAttribute('tabindex', '0');
       g.setAttribute('role', 'button');
-      g.setAttribute('aria-label', it.label || it.id);
+      g.setAttribute('aria-label', it.name || it.label || it.id);
       g.addEventListener('click', () => onSelect(it));
       g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(it); } });
     }

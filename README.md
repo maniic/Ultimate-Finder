@@ -43,16 +43,17 @@ Each view is a working starting point built from the paper prototype, with a
 `TODO` list at the top of its `view.js` drawn from our think-aloud and
 heuristic-evaluation findings.
 
-| View | Folder | Try it | Prototype ref | Owner |
-|---|---|---|---|---|
-| Search (building name/code + room) | `views/search` | `#/search` | Fig. 2a–b | |
-| Route preview (entrance, walk time, step-free) | `views/preview` | `#/preview?b=OI&r=10-210` | Fig. 2c | |
-| Floor plan (floors, highlighted room, legend) | `views/floorplan` | `#/floorplan?b=OI&f=10&r=10-210` | Fig. 2c, concept 3 | |
-| Step-by-step directions | `views/navigate` | `#/navigate?b=OI&r=10-210&step=1` | Fig. 3, concept 2 | |
-| "This isn't what I see" recovery | `views/recover` | `#/recover?b=OI&r=10-210&step=3` | Fig. 4 | |
-| Facilities (nearest by type, status) | `views/facilities` | `#/facilities` | Fig. 5 | |
+| View | Folder | Try it | Prototype ref |
+|---|---|---|---|
+| Search (building name/code + room) | `views/search` | `#/search` | Fig. 2a–b |
+| Route preview (entrance, walk time, step-free) | `views/preview` | `#/preview?b=OI&r=10-210` | Fig. 2c |
+| Floor plan (floors, highlighted room, legend) | `views/floorplan` | `#/floorplan?b=OI&f=10&r=10-210` | Fig. 2c, concept 3 |
+| Step-by-step directions | `views/navigate` | `#/navigate?b=OI&r=10-210&step=1` | Fig. 3, concept 2 |
+| "This isn't what I see" recovery | `views/recover` | `#/recover?b=OI&r=10-210&step=3` | Fig. 4 |
+| Facilities (nearest by type, status) | `views/facilities` | `#/facilities` | Fig. 5 |
 
-Put your name in the Owner column in your first PR.
+Claim a view by putting your name on the `// Owner:` line at the top of its
+`view.js`. Each claim then edits a different file, so claims never conflict.
 
 ## Working on your view
 
@@ -65,10 +66,15 @@ git push -u origin view/<name>     # then open a PR into main
 
 - **Stay inside your view's folder** where you can. Then branches never
   conflict.
+- **Mock data that only your view uses** goes in `views/<name>/data.js`,
+  not the shared `js/data.js`. Six people appending to the same arrays
+  would conflict.
 - **Shared files** (`js/data.js`, `js/ui.js`, `js/floorplan.js`,
   `css/base.css`, `js/app.js`): *adding* things is fine. Renaming or
   reshaping something another view uses needs its own small PR, and a heads-up
   in the group chat.
+- **Links and images:** build in-app links with `nav.href(...)`. Never put
+  URL params or user input straight into an `href`/`src`.
 - **Before you merge:** pull `main` into your branch, run it locally, click
   through your view, and check `/healthz`. Merging deploys.
 - **New view?** Add a folder under `public/views/` and its name to `VIEWS`

@@ -1,4 +1,5 @@
 // VIEW: Recovery ("This isn't what I see"). Go back a step, or report a
+// Owner: (your name here)
 // blocked elevator/stairs, say where you are, and get a new route.
 // Prototype Fig. 4.
 // In:  #/recover?b=OI&r=10-210&step=3[&stepfree=1][&stage=where|unsure]
@@ -22,7 +23,7 @@ export function render(root, params, nav) {
     append(root, backLink(nav.href('search')), h('p', null, 'Nothing to recover. Start a new search.'));
     return;
   }
-  const n = parseInt(params.step, 10) || 1;
+  const n = Math.min(Math.max(parseInt(params.step, 10) || 1, 1), 50);
   const routeParams = { b: building.code, r: room.number, stepfree: params.stepfree, alt: params.alt };
   const here = (stage) => nav.href('recover', { ...routeParams, step: n, stage });
 

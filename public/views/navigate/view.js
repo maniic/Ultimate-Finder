@@ -1,4 +1,5 @@
 // VIEW: Step-by-step navigation. One instruction at a time, with a photo of
+// Owner: (your name here)
 // what to look for, a mini map and progress. Prototype Fig. 3; concept 2.
 // In:  #/navigate?b=OI&r=10-210&step=1[&stepfree=1][&alt=blockedElevator]
 // Out: #/recover?... ("This isn't what I see")  ·  #/search (finish/exit)
@@ -29,6 +30,7 @@ export function render(root, params, nav) {
   const total = route.steps.length;
   const n = Math.min(Math.max(parseInt(params.step, 10) || 1, 1), total);
   const step = route.steps[n - 1];
+  const arrived = step.arrival || n === total;
   const here = { ...params, step: undefined };
   const go = (i) => nav.href('navigate', { ...here, step: i });
 
@@ -42,19 +44,19 @@ export function render(root, params, nav) {
         h('p', { class: 'small muted' }, `To ${building.code} ${room.number} · Floor ${step.floor} now`),
         h('h1', null, `Step ${n} of ${total}`)),
       h('a', { class: 'btn exit', href: nav.href('search') }, 'Exit')),
-    h('div', { class: 'progress', role: 'progressbar', 'aria-valuemin': 1, 'aria-valuemax': total, 'aria-valuenow': n },
+    h('div', { class: 'progress', role: 'progressbar', 'aria-label': 'Route progress', 'aria-valuemin': 1, 'aria-valuemax': total, 'aria-valuenow': n },
       h('span', { style: `width:${(n / total) * 100}%` })),
     params.alt ? h('p', { class: 'notice small' }, 'New route avoiding the blocked elevator.') : null,
     mini,
     photo(`Look for: ${step.see}`),
     h('p', { class: 'instruction', 'aria-live': 'polite' }, step.text),
-    !step.arrival ? h('p', { class: 'muted small' }, 'Tap Next when you can see this.') : null,
+    !arrived ? h('p', { class: 'muted small' }, 'Tap Next when you can see this.') : null,
     h('div', { class: 'btn-row' },
       h('a', { class: 'btn', href: n > 1 ? go(n - 1) : null, 'aria-disabled': n === 1 ? 'true' : null }, 'Previous step'),
-      step.arrival
+      arrived
         ? h('a', { class: 'btn btn-primary', href: nav.href('search') }, 'Finish route')
         : h('a', { class: 'btn btn-primary', href: go(n + 1) }, 'Next step')),
-    !step.arrival ? h('a', { class: 'btn mismatch', href: nav.href('recover', { ...params, step: n }) }, "This isn't what I see") : null,
+    !arrived ? h('a', { class: 'btn mismatch', href: nav.href('recover', { ...params, step: n }) }, "This isn't what I see") : null,
     route.walkMin ? h('p', { class: 'muted small' }, `About ${minutes(route.walkMin)} total.`) : null,
   );
 }

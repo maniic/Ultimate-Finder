@@ -14,7 +14,9 @@ const root = document.getElementById('view');
 
 function parseHash() {
   const raw = location.hash.replace(/^#\/?/, '');
-  const [name, query = ''] = raw.split('?');
+  const q = raw.indexOf('?');
+  const name = q === -1 ? raw : raw.slice(0, q);
+  const query = q === -1 ? '' : raw.slice(q + 1);
   return { name: VIEWS.includes(name) ? name : DEFAULT_VIEW, params: Object.fromEntries(new URLSearchParams(query)) };
 }
 
@@ -25,7 +27,10 @@ export const nav = {
     const q = new URLSearchParams(clean).toString();
     return `#/${name}${q ? `?${q}` : ''}`;
   },
-  go(name, params) { location.hash = nav.href(name, params); },
+  go(name, params, { keepFocus } = {}) {
+    if (keepFocus) root.dataset.keepFocus = keepFocus; // element id to refocus after re-render
+    location.hash = nav.href(name, params);
+  },
   back() { history.length > 1 ? history.back() : nav.go(DEFAULT_VIEW); },
 };
 
@@ -39,6 +44,7 @@ function loadCss(name) {
 }
 
 let renderSeq = 0;
+let lastView = null;
 async function route() {
   const seq = ++renderSeq;
   const { name, params } = parseHash();
@@ -57,8 +63,23 @@ async function route() {
   root.className = `view view-${name}`;
   document.title = mod.title ? `${mod.title} · Ultimate Finder` : 'Ultimate Finder';
   const tab = TAB_FOR[name] || 'search';
-  document.querySelectorAll('[data-tab]').forEach((a) => a.toggleAttribute('aria-current', a.dataset.tab === tab));
-  mod.render(root, params, nav);
+  document.querySelectorAll('[data-tab]').forEach((a) => (a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
+  try {
+    mod.render(root, params, nav);
+  } catch (err) {
+    console.error(err);
+    root.replaceChildren(`Couldn't render the "${name}" view. Check the console.`);
+    return;
+  }
+  // Same view, only params changed (e.g. a toggle): keep keyboard focus where it was.
+  const sameView = name === lastView;
+  lastView = name;
+  const keep = root.dataset.keepFocus;
+  delete root.dataset.keepFocus;
+  if (sameView && keep) {
+    document.getElementById(keep)?.focus();
+    return;
+  }
   root.focus({ preventScroll: true });
   window.scrollTo(0, 0);
 }

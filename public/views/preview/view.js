@@ -1,4 +1,5 @@
 // VIEW: Route preview. Best entrance, walk time and floor before you leave,
+// Owner: (your name here)
 // plus the step-free switch. Prototype Fig. 2c.
 // In:  #/preview?b=OI&r=10-210[&stepfree=1]
 // Out: #/floorplan?b&f&r  ·  #/navigate?b&r&stepfree&step=1
@@ -29,7 +30,7 @@ export function render(root, params, nav) {
   const others = (ENTRANCES[building.code] || []).filter((e) => e.id !== entrance.id);
   const toggle = h('input', {
     type: 'checkbox', role: 'switch', id: 'stepfree', checked: stepFree,
-    onchange: (e) => nav.go('preview', { b: building.code, r: room.number, stepfree: e.target.checked ? '1' : undefined }),
+    onchange: (e) => nav.go('preview', { b: building.code, r: room.number, stepfree: e.target.checked ? '1' : undefined }, { keepFocus: 'stepfree' }),
   });
 
   append(root, 
