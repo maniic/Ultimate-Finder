@@ -28,15 +28,59 @@ failed commit isn't retried: pushing a new commit is the only way to retry.
 
 Rules that follow from this (they apply to humans and AI agents alike):
 
-- **Never commit or push directly to `main`.** Work on a branch, open a pull
-  request, and merge it only when it works locally (`npm start`, then load
-  the page and `/healthz`). An agent should open the PR and stop. Merging is
-  a human decision, because merging is deploying.
+- **Never commit or push directly to `main`.** Each teammate works on their
+  own branch. Changes reach `main` only through the ship flow below, and
+  merging is deploying.
 - **Keep `main` deployable at every commit.** Don't merge half-finished work
   that breaks the server. Put it behind a page nobody links to yet, or keep
   it on a branch.
 - **Don't rewrite `main`'s history** (`--force`, rebase-and-force-push). A
   revert is a normal PR that deploys like any other.
+
+### The ship flow (how an agent gets a teammate's work onto `main`)
+
+There's no teammate code review. Instead, each change gets a **fresh-context
+AI review**, then the **teammate's own explicit approval**. Follow these steps
+in order, and don't skip or reorder them:
+
+1. **Work on the teammate's branch** (`view/<name>`, `fix/<topic>` and so on;
+   see `CONTRIBUTING.md`). Commit freely. Pushing the *branch* any time is
+   fine, since it deploys nothing.
+2. **When the teammate says they're done, run the pre-merge review.** First
+   `git fetch origin && git merge origin/main` (a merge, never a rebase),
+   then spawn a **fresh-context subagent**. Give it real tool access, so it
+   runs `git diff origin/main...HEAD` and reads the files itself rather than
+   trusting a summary. It checks:
+   - correctness, including edge cases (an unknown building or room, a
+     missing param);
+   - the deploy contract below, including whether the server still starts
+     and `/healthz` returns 200 (`PORT=3999 npm start`);
+   - that the change stays in the teammate's lane: only their view's folder,
+     unless shared-file changes were the point;
+   - no secrets, personal data or unrestricted API keys;
+   - DOM built with `h()`/`append()`, and links built with `nav.href()`.
+3. **Fix each finding, or dismiss it with a stated reason, together with the
+   teammate.** Never ship past a finding nobody addressed.
+4. **Ask the teammate for explicit approval to ship.** Summarise what
+   changes and what the review found. "Looks good", "ship it" or similar
+   counts. Silence or an earlier approval of a different change doesn't.
+5. **Only then ship:**
+   - push the branch;
+   - `gh pr create --base main`, with the summary and the review outcome as
+     the description;
+   - `gh pr merge <n> --merge --delete-branch`. Use a merge commit, never
+     squash or rebase, so other branches stay clean.
+
+   The PR is the record and gives a one-click **Revert**.
+6. **Confirm it went live.** Within ~5 minutes,
+   `https://ultimate-finder.junaidarshad.com/healthz` returns 200 and the
+   change is visible after a hard refresh. If it doesn't appear, the server
+   rejected the deploy, and the previous version is still live. Tell the
+   teammate, who should contact Junaid, since deploy logs live on the
+   server.
+
+Without Claude Code, a teammate does the same by hand: the
+`CONTRIBUTING.md` checklist instead of step 2, then PR and merge.
 
 ### The deploy contract — don't break these
 
@@ -48,7 +92,7 @@ The server only uses what's described here. Anything else is ignored.
 | The container listens on **port 3000** | The reverse proxy in front of it expects 3000. |
 | `GET /healthz` returns **200** within ~90s of starting, and keeps returning 200 (no crash or restart) across a re-check ~5s later | A failing health check rolls the deploy back. |
 | The app runs on a **read-only filesystem** as a non-root user; only `/tmp` is writable (wiped on every deploy) | Persistent state needs a different design. Talk to Junaid first. |
-| The server has **no outbound network access** at runtime | Server-side calls to external APIs fail. Browser-side calls (map tiles, client-side APIs) work. Talk to Junaid if the server needs to call out. |
+| The server has **no outbound network access** at runtime | Server-side calls to external APIs fail. Browser-side calls work, including the Google Maps JavaScript API, map tiles and other client-side APIs. Talk to Junaid if the server needs to call out. |
 | **No `LABEL`** instructions, except `org.opencontainers.image.*` | Any other label gets the deploy rejected. |
 | **No `VOLUME`** instructions | The deploy gets rejected. There's no persistent storage. |
 | A `docker-compose.yml` in this repo is **not used** | The server runs its own. Add one for local dev if you like. |
@@ -58,7 +102,9 @@ Junaid in the PR; it won't take effect just by merging.
 
 ## App structure: one folder per view
 
-`README.md` has the layout, the view/owner table and the branch workflow.
+`README.md` has the layout and the view table. `CONTRIBUTING.md` is the team
+workflow (branch names, merge-commit merges, pre-merge checklist, reverts).
+Follow it, and point teammates to it.
 The short version for agents:
 
 - Each screen is `public/views/<name>/view.js` (exports
@@ -81,7 +127,11 @@ The short version for agents:
 ## Hard rules
 
 - **Never commit secrets** (API keys, passwords, tokens). The repo is
-  **public**. `.env` is gitignored, and the deployed app gets no secrets at
+  **public**. The exception is a *browser* API key (such as Google Maps),
+  which ends up in the page anyway. It may be committed only if it's
+  restricted in its console to the site's referrers
+  (`ultimate-finder.junaidarshad.com/*`, `localhost:3000/*`) and to the APIs
+  actually used. `.env` is gitignored, and the deployed app gets no secrets at
   all today.
 - **No personal data in the repo.** Interview transcripts and survey results
   in `submitted_docs/` are already public. Don't add anything identifying a
