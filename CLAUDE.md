@@ -58,7 +58,9 @@ Junaid in the PR; it won't take effect just by merging.
 
 ## App structure: one folder per view
 
-`README.md` has the layout, the view/owner table and the branch workflow.
+`README.md` has the layout and the view table. `CONTRIBUTING.md` is the team
+workflow (branch names, merge-commit merges, pre-merge checklist, reverts).
+Follow it, and point teammates to it.
 The short version for agents:
 
 - Each screen is `public/views/<name>/view.js` (exports
