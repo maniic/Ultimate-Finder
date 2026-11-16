@@ -1,0 +1,16 @@
+// Shared Prisma setup (generator + datasource). Owned by nobody in
+// particular: change it only in a `shared/` or `db/` branch.
+//
+// Models live in one file per feature: prisma/schema/<feature>.prisma.
+// Read CONTRIBUTING.md → "Database & migrations" before adding one.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../../generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts" // lets Node 24 load the generated client without a build step
+}
+
+datasource db {
+  provider = "postgresql"
+}

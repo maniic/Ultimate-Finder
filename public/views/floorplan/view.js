@@ -1,5 +1,5 @@
-// VIEW: Floor plan. Browse a building floor by floor, see the destination
 // Owner: (your name here)
+// VIEW: Floor plan. Browse a building floor by floor, see the destination
 // highlighted and the route from the elevator, and tap rooms/facilities.
 // Prototype Fig. 2c ("Show floor plan"); design concept 3.
 // In:  #/floorplan?b=OI&f=10[&r=10-210][&stepfree=1]

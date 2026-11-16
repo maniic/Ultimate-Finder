@@ -1,5 +1,5 @@
-// VIEW: Facilities. Pick an exact type (bottle filler, not just "water"), see
 // Owner: (your name here)
+// VIEW: Facilities. Pick an exact type (bottle filler, not just "water"), see
 // the nearest ones with walk time and whether they're working, then details.
 // Prototype Fig. 5; screen-level storyboard 3.
 // In:  #/facilities  ·  #/facilities?type=bottle-filler  ·  ...&id=f1
@@ -9,11 +9,15 @@
 //  - Think-aloud finding 4: testers liked this most; consider surfacing it on
 //    the search screen too.
 //  - "Nearest to what?" Choose a building/floor you're in (mock: OISE).
-//  - Report-a-problem flow, and routing to a facility via the navigate view.
+//  - Routing to a facility via the navigate view.
+//  - Reports are stored (reports.js → /api/facility-reports) but don't yet
+//    change the facility's status. Decide how they should (e.g. 2+ recent
+//    'not-working' reports → show as out of order).
 
 import { h, append, photo, backLink, minutes } from '/js/ui.js';
 import { FACILITY_TYPES, FACILITIES, FLOORS, facilityTypeName, getBuilding } from '/js/data.js';
 import { drawPlan } from '/js/floorplan.js';
+import { reportSection } from './reports.js';
 
 export const title = 'Facilities';
 
@@ -50,11 +54,10 @@ export function render(root, params, nav) {
           h('p', null, f.near),
           statusLine(f),
           h('p', { class: 'muted small' }, `About ${minutes(f.walkMin)} away.`)),
-        h('div', { class: 'btn-row' },
-          h('button', { class: 'btn', disabled: true, title: 'Not built yet' }, 'Report a problem'),
-          FLOORS[f.building]?.[f.floor]
-            ? h('a', { class: 'btn btn-primary', href: nav.href('floorplan', { b: f.building, f: f.floor }) }, 'Show on floor plan')
-            : h('button', { class: 'btn', disabled: true }, 'No floor plan yet')),
+        FLOORS[f.building]?.[f.floor]
+          ? h('a', { class: 'btn btn-primary', href: nav.href('floorplan', { b: f.building, f: f.floor }) }, 'Show on floor plan')
+          : h('button', { class: 'btn', disabled: true }, 'No floor plan yet'),
+        reportSection(f.id),
       );
       return;
     }

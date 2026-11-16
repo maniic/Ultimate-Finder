@@ -1,0 +1,65 @@
+# Local development ONLY. The server never reads this file; it runs its own
+# hardened setup. Usage (see CONTRIBUTING.md):
+#
+#   docker compose up --build          app on http://localhost:3000, with Postgres
+#   docker compose exec app npx prisma migrate dev --name <what_changed>
+#   docker compose --profile prod up --build prod   (prod-like check on :3001)
+#   docker compose down                 stop (add -v to also wipe the local DB)
+
+name: ultimate-finder-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: uf
+      POSTGRES_PASSWORD: uf        # local throwaway, not a real secret
+      POSTGRES_DB: uf
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uf -d uf"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # Your dev server: edits in src/, public/ and prisma/ apply live.
+  app:
+    build:
+      context: .
+      target: dev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://uf:uf@db:5432/uf
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./prisma:/app/prisma
+
+  # Runs the production image the way the server does: read-only, non-root,
+  # no capabilities, migrations first. Use it before shipping risky changes.
+  prod:
+    profiles: ["prod"]
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://uf:uf@db:5432/uf
+    read_only: true
+    tmpfs:
+      - /tmp
+    user: "1000:1000"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    command: ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && exec node src/server.js"]
+    ports:
+      - "3001:3000"
+
+volumes:
+  db-data:

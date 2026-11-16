@@ -4,23 +4,26 @@
 > at the end of every working pass: move finished items, record decisions with
 > their why, keep "Next up" honest. Record the current state, not a transcript.
 
-**Last updated:** 2026-11-16 (session 1: scaffold)
+**Last updated:** 2026-11-16 (session 1: scaffold, views, DB + Docker)
 
 ## Current state
 
-Scaffolded: an Express server (`src/server.js`) on port 3000 serving a
-placeholder page from `public/`, with `GET /healthz` for the deploy health
-check, a `Dockerfile` (node:24-alpine, `npm ci`, runs as `node`), and
-`CLAUDE.md` describing the auto-deploy rules and the deploy contract.
+**Live** at <https://ultimate-finder.junaidarshad.com>, auto-deployed from `main`.
 
-**App shell + six starter views** (branch `app-shell`): a hash router, shared
-`h()` helpers, mock OISE data, and an SVG floor-plan renderer. There's one
-folder per prototype screen: search, preview, floorplan, navigate, recover
-and facilities. Each is a working, phone-first view of the paper-prototype
-flow (OISE 10-210), and each `view.js` starts with a TODO list taken from
-the evaluation findings. The views were smoke-tested by screenshotting
-every route in headless Chrome. `README.md` has the owner table and the
-branch workflow.
+- **App:** a hash-routed, phone-first frontend with six feature folders
+  under `public/views/` (search, preview, floorplan, navigate, recover,
+  facilities). They run on mock OISE data in `public/js/data.js`.
+- **Server:** Express (ES modules) serving `public/` with `no-cache`,
+  `/healthz` (which checks the DB), and auto-mounted `src/api/<feature>.js`
+  routes.
+- **Database:** Postgres 17 via Prisma 7.10.1. The schema is split per
+  feature in `prisma/schema/`, with an init migration. Facilities' "Report
+  a problem" saves to the database end to end.
+- **Local development:** `docker compose up` (`compose.yaml`) runs the app
+  plus Postgres, with a `prod` profile for prod-like checks.
+- **Team docs:** `CONTRIBUTING.md` (workflow) and `docs/kickoff.md`
+  (overview with diagrams). `CLAUDE.md` holds the agent rules: scope plus
+  explicit approval for shared files, and the ship flow.
 
 The design work lives in `submitted_docs/`. The chosen direction is in
 `Ultimate Finder_ Prototyping Wayfinding at U of T (4).pdf`: an interactive
@@ -41,19 +44,43 @@ design changes on pp. 22–32.
 
 ## Decisions log
 
-- **2026-11-16: static files are `Cache-Control: no-cache`, not hash-versioned.**
-  Without an explicit header, Cloudflare gave JS/CSS a 4-hour browser cache,
-  so people kept running old views after a merge. The platform's usual fix,
-  `?v=<hash>` on the assets the HTML references (home-infra
-  `asset-cache-versioning` skill), would need an import map or a build step
-  to reach ES-module `import`s. Revalidating with ETags costs one 304 per
-  module per page load (about 11 files), which is fine for a small
-  prototype that changes often. Known edge case: a tab left open across a
-  deploy keeps the old shared modules in memory, so a newly opened view
-  that imports a new shared export can fail until the page is reloaded.
-  `app.js` shows a render-error message in that case. Revisit if a build
-  step is ever added.
+- **2026-11-16: Postgres + Prisma 7, Docker for local dev, per-feature files.**
+  Junaid wanted a database and Docker.
+  - The server runs a **dedicated Postgres 17** (not the platform's shared
+    one) in the app's sandbox. It runs `prisma migrate deploy` from the new
+    image before each swap, after a pre-migration dump.
+  - Migrations are **additive only**, because a rollback runs old code
+    against the new schema.
+  - Prisma 7.10.1 is pinned: npm's `latest` tag currently points at an 8.0
+    RC.
+  - The generated client is TypeScript. It loads with no build step via
+    Node 24 type stripping, which is why the package is `"type": "module"`.
+  - **Per-feature files** keep six people from colliding:
+    `prisma/schema/<feature>.prisma` (multi-file schema),
+    `src/api/<feature>.js` (auto-mounted by `server.js`), and
+    `public/views/<feature>/`.
+  - `CLAUDE.md` Rule 1 makes agents stay in scope, and **ask for explicit
+    approval** before touching any shared file.
+  - `compose.yaml` is local only: an app with live reload, Postgres, and a
+    `prod` profile that runs the production image read-only with
+    migrations first.
+  - Facilities' "Report a problem" (`src/api/facilities.js` +
+    `views/facilities/reports.js`) is the worked end-to-end example.
+- **2026-11-16: ship flow re-checks `main` right before merging.** `main`
+  can move during the review. The agent re-fetches it, merges and re-checks
+  if it moved, regenerates its own migration if `main` gained migrations,
+  and requires GitHub to report `MERGEABLE` before `gh pr merge --merge`.
 
+- **2026-11-16: static files are `Cache-Control: no-store`.** Without an
+  explicit header, Cloudflare gave JS/CSS a 4-hour browser cache, so people
+  kept running old views after a merge.
+  - `no-cache` was shipped first (PR #3), and the live headers showed
+    Cloudflare still rewrote it to `max-age=14400`. `no-store` passes
+    through (as on the platform's notepad app).
+  - `?v=<hash>` versioning (the home-infra `asset-cache-versioning` skill)
+    would need an import map or a build step to reach ES-module `import`s.
+  - Cost: about 11 small files re-downloaded per page load. Revisit if a
+    build step is ever added.
 - **2026-11-16: no build step; one folder per view; URL-only coupling.** Six
   people work in parallel, so the structure minimises merge conflicts: each
   screen lives in its own folder, and views pass state only through the
