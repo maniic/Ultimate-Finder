@@ -62,8 +62,10 @@ claiming a view, branch names, keeping your branch up to date, what's safe
 to change in shared files, the pre-merge checklist and how to undo a bad
 deploy.
 
-The short version: `git checkout -b view/<name>`, work inside
-`public/views/<name>/`, then open a PR into `main`. Merging deploys.
+The short version: `git checkout -b view/<name>`, then work inside
+`public/views/<name>/`. When you're happy with it, tell Claude Code you're
+done. It reviews the change, asks for your OK, then merges it to `main`,
+which deploys it.
 
 All data is mock data in `public/js/data.js`, based on the prototype's
 OISE 10-210 scenario. None of it has been verified on site.

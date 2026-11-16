@@ -1,8 +1,8 @@
 # Working on Ultimate Finder together
 
 How the six of us build this without stepping on each other. The short
-version: **one view each, one branch per change, PRs into `main`, and merging
-deploys.**
+version: **one view each, your own branch, an AI review plus your OK, then
+it merges and deploys.**
 
 ## The one rule that matters
 
@@ -10,8 +10,9 @@ deploys.**
 <https://ultimate-finder.junaidarshad.com> within about 2 minutes.** There's
 no staging site and no "deploy" button: merging *is* deploying. So:
 
-- Never push directly to `main`. Always open a pull request.
-- Only merge what you've run locally.
+- Never push directly to `main`. Work on your own branch, and ship it
+  through the review + approval flow ("Shipping your change" below).
+- Only ship what you've run locally.
 - Never force-push to `main` or rewrite its history.
 
 If a merge breaks the build or the app won't start, the live site keeps
@@ -27,8 +28,8 @@ npm install
 npm run dev            # http://localhost:3000
 ```
 
-You need Node 24+ and nothing else. There's no build step: edit a file in
-`public/` and refresh the browser.
+You need **Node 24+** and nothing else. You don't need Docker. There's no
+build step: edit a file in `public/` and refresh the browser.
 
 You only ever work in **this repo**. The server side is set up separately,
 and you never need access to it.
@@ -66,14 +67,12 @@ git checkout -b view/facilities          # see "Branch names" below
 git add -A
 git commit -m "Facilities: sort by distance, add last-checked dates"
 
-# 4. Push and open a PR
+# 4. Push your branch (a backup, and visible to the others; deploys nothing)
 git push -u origin view/facilities
-#    then on GitHub: "Compare & pull request" → base: main
 ```
 
-Open the PR early, even as a **draft**, so others can see what you're
-doing. Push more commits to the same branch as you go, and the PR updates
-itself.
+Push as often as you like. When you're happy with it, see
+"Shipping your change" below.
 
 ### Branch names
 
@@ -126,7 +125,10 @@ you collided with.
     each deploy slower.
   - No identifiable people in shots. The repo is public.
 
-## Before you merge: checklist
+## Before you ship: checklist
+
+The AI review covers this too, but it's worth knowing what it checks.
+
 
 - [ ] `main` is merged into your branch, and it still runs: `npm run dev`
 - [ ] You clicked through your view, including the empty and error cases
@@ -134,22 +136,35 @@ you collided with.
 - [ ] <http://localhost:3000/healthz> says `ok`
 - [ ] Nothing changed outside your folder, unless that was the point of the PR
 - [ ] No passwords, API keys or personal data. The repo is public.
-- [ ] Optional, if you changed `package.json` or the `Dockerfile`: run
+- [ ] Only if you have Docker and changed `package.json` or the `Dockerfile`
+      (not required): run
       `docker build -t uf . && docker run --rm --read-only --tmpfs /tmp -p 3000:3000 uf`.
       That's exactly how the server runs it.
 
-## Reviewing and merging
+## Shipping your change
 
-- **Get one teammate to look at your PR** before merging, ideally someone
-  whose view touches yours. A quick "ran it, works" comment is enough for
-  small changes.
-- **Merge with the "Create a merge commit" button**, not squash or rebase.
-  Squashing breaks anyone whose branch was built on top of yours.
-- **Delete the branch** after merging. GitHub offers a button.
-- **About 2 minutes later, check the live site** and hard-refresh it.
-  If your change still isn't there after ~5 minutes, the deploy was
-  probably rejected (it failed to build or start). Tell Junaid, since the
-  logs live on the server.
+There are no teammate reviews. You decide when your work is ready, and an
+AI review checks it first:
+
+1. **Work on your branch** until you're happy with it. Pushing your branch
+   is always safe: it deploys nothing.
+2. **Tell Claude Code you're done** (for example, "I'm done with this, review
+   it for shipping"). The repo's `CLAUDE.md` makes it:
+   - bring in the latest `main`;
+   - run a **fresh, independent review** of your changes: does it work,
+     does the server still start, did you stay in your folder, no secrets;
+   - go through each finding with you, fixing it or agreeing to skip it.
+3. **Approve it** ("ship it"). Only then does it push, open a PR, merge it
+   into `main` with a merge commit, and check that the live site updated
+   (~2 min).
+
+Not using Claude Code? Go through the checklist above yourself, open a PR,
+and merge it with **"Create a merge commit"** (not squash or rebase).
+Delete the branch afterwards.
+
+If your change isn't live ~5 minutes after merging, the server rejected
+it (it failed to build or start), and the old version is still up. Tell
+Junaid, since the logs live on the server.
 
 ### Something broke on the live site?
 
@@ -159,9 +174,25 @@ creates. That deploys the previous code. Then fix it calmly on a new branch.
 ## Using AI assistants (Claude Code, Copilot, etc.)
 
 That's welcome. Claude Code reads `CLAUDE.md` in this repo automatically and
-follows the same rules: it works on a branch, opens a PR and **stops**. It
-merges only if you explicitly tell it to. Review what it wrote before you
-merge, the same as a teammate's code.
+follows the ship flow above: it never touches `main` directly, and it
+merges only after its independent review **and** your explicit approval.
+Read what it wrote before you say "ship it". You're the one approving.
+
+## External APIs (Google Maps etc.)
+
+Call them **from the browser** (in your view's JS), never from
+`src/server.js`. The server has no internet access, but visitors' browsers
+do. The Google Maps JavaScript API, including walking directions, works
+fine this way.
+
+A browser API key is visible to anyone who opens the page, so before
+committing one, **restrict it** in Google Cloud Console:
+- HTTP referrers: `ultimate-finder.junaidarshad.com/*` and
+  `localhost:3000/*` only;
+- APIs: only the Maps APIs you use.
+
+Put it in one place (for example `public/js/config.js`), not scattered
+through views.
 
 ## Things the server enforces
 
