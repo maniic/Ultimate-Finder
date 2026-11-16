@@ -41,6 +41,13 @@ design changes on pp. 22–32.
 
 ## Decisions log
 
+- **2026-11-16: the A3 prototype brief lives in the repo.** It is at
+  `docs/A3_PROTOTYPE_BRIEF.md` and `CLAUDE.md` imports it, so every AI
+  session gets the rubric, requirements, A2 issues and design direction
+  without anyone pasting it. Its *Proposed* items (Bahen as the deep
+  building, the waypoint-graph data model, study tasks, ownership) still
+  need the team's agreement.
+
 - **2026-11-16: static files are `Cache-Control: no-cache`, not hash-versioned.**
   Without an explicit header, Cloudflare gave JS/CSS a 4-hour browser cache,
   so people kept running old views after a merge. The platform's usual fix,

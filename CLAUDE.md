@@ -3,10 +3,24 @@
 ## Session ritual
 
 1. **Start:** read `AI_HANDOFF.md` in full. It records the current state,
-   decisions already made, and what's next.
+   decisions already made, and what's next. Then read
+   `docs/A3_PROTOTYPE_BRIEF.md` in full (imported below, so Claude Code
+   loads it automatically). It is the product brief: the A3 rubric, the
+   five A1 requirements, the A2 issues to fix, the visual direction, the
+   build plan and the rules for AI assistants.
 2. **End of every working pass:** update `AI_HANDOFF.md`. Move finished items,
    log new decisions with their *why*, and list what's next. Record the
    current state, not a transcript.
+
+## Product brief (always loaded)
+
+@docs/A3_PROTOTYPE_BRIEF.md
+
+Items the brief marks *Proposed* are not agreed yet, and items marked
+*Verify* must be checked on site: don't treat either as fact. Where the
+brief and this file disagree on repo or deploy rules, this file wins. Tie
+every change to a rubric item, an A1 requirement or an A2 issue from the
+brief, and say which one in the pull request.
 
 ## What this repo is
 
