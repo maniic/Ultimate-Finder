@@ -14,6 +14,7 @@
 // everyone. Consider hiding them, or checking facilityId against real
 // facility IDs once campus data is real.
 
+import { isIP } from 'node:net';
 import { Router } from 'express';
 import { prisma } from '../db.js';
 
@@ -24,7 +25,8 @@ const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 //   - per visitor: 5 reports per 10 minutes. IPv6 addresses are grouped by
 //     /64, since one person usually controls a whole /64.
 //   - overall: 200 reports per hour, so spread-out spam can't fill the
-//     database.
+//     database. (Trade-off: someone with many IPs can use up the hour's
+//     budget for everyone; accepted for a prototype.)
 // Cloudflare sets CF-Connecting-IP to the real visitor's IP, and the server
 // is reachable only through Cloudflare.
 const WINDOW_MS = 10 * 60 * 1000;
@@ -35,9 +37,19 @@ const MAX_TRACKED = 10000;
 const hits = new Map();   // visitor key -> timestamps (Map keeps insertion order)
 let globalHits = [];
 
+// IPv4 as-is, IPv6 reduced to its /64 prefix (fully expanded, so `2001:db8::1`
+// and `2001:db8::2` share a key), IPv4-mapped IPv6 (::ffff:1.2.3.4) as IPv4.
 function visitorKey(req) {
-  const ip = req.get('cf-connecting-ip') || req.socket.remoteAddress || 'unknown';
-  return ip.includes(':') ? ip.split(':').slice(0, 4).join(':') + '::/64' : ip;
+  let ip = req.get('cf-connecting-ip') || req.socket.remoteAddress || 'unknown';
+  if (ip.toLowerCase().startsWith('::ffff:') && isIP(ip.slice(7)) === 4) ip = ip.slice(7);
+  if (isIP(ip) === 4) return ip;
+  if (isIP(ip) !== 6) return 'unknown';
+  const [head, tail = ''] = ip.toLowerCase().split('%')[0].split('::');
+  const h = head ? head.split(':') : [];
+  const t = ip.includes('::') && tail ? tail.split(':') : [];
+  if (t.some((g) => g.includes('.')) || h.some((g) => g.includes('.'))) return ip; // rare embedded-IPv4 forms
+  const groups = ip.includes('::') ? [...h, ...Array(8 - h.length - t.length).fill('0'), ...t] : h;
+  return groups.slice(0, 4).map((g) => parseInt(g, 16).toString(16)).join(':') + '::/64';
 }
 
 function rateLimited(req) {
