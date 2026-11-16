@@ -57,31 +57,13 @@ Claim a view by putting your name on the `// Owner:` line at the top of its
 
 ## Working on your view
 
-```bash
-git checkout main && git pull
-git checkout -b view/<name>        # e.g. view/facilities
-# ...edit public/views/<name>/...
-git push -u origin view/<name>     # then open a PR into main
-```
+**Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before your first PR.** It covers
+claiming a view, branch names, keeping your branch up to date, what's safe
+to change in shared files, the pre-merge checklist and how to undo a bad
+deploy.
 
-- **Stay inside your view's folder** where you can. Then branches never
-  conflict.
-- **Mock data that only your view uses** goes in `views/<name>/data.js`,
-  not the shared `js/data.js`. Six people appending to the same arrays
-  would conflict.
-- **Shared files** (`js/data.js`, `js/ui.js`, `js/floorplan.js`,
-  `css/base.css`, `js/app.js`): *adding* things is fine. Renaming or
-  reshaping something another view uses needs its own small PR, and a heads-up
-  in the group chat.
-- **Links and images:** build in-app links with `nav.href(...)`. Never put
-  URL params or user input straight into an `href`/`src`.
-- **Before you merge:** pull `main` into your branch, run it locally, click
-  through your view, and check `/healthz`. Merging deploys.
-- **New view?** Add a folder under `public/views/` and its name to `VIEWS`
-  in `public/js/app.js`.
-- **Real photos:** the striped boxes are placeholders, and their captions
-  say what to photograph. Put images in `public/img/` and pass the path as
-  the second argument to `photo(caption, src)`.
+The short version: `git checkout -b view/<name>`, work inside
+`public/views/<name>/`, then open a PR into `main`. Merging deploys.
 
 All data is mock data in `public/js/data.js`, based on the prototype's
 OISE 10-210 scenario. None of it has been verified on site.
