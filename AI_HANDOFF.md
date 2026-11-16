@@ -41,6 +41,15 @@ design changes on pp. 22–32.
 
 ## Decisions log
 
+- **2026-11-16: static files are `Cache-Control: no-cache`, not hash-versioned.**
+  Without an explicit header, Cloudflare gave JS/CSS a 4-hour browser cache,
+  so people kept running old views after a merge. The platform's usual fix,
+  `?v=<hash>` on the assets the HTML references (home-infra
+  `asset-cache-versioning` skill), can't reach ES-module `import`s between
+  files without a build step. Revalidating every load with ETags costs one
+  304 per file, which is fine for a small prototype that changes often.
+  Revisit if a build step is ever added.
+
 - **2026-11-16: no build step; one folder per view; URL-only coupling.** Six
   people work in parallel, so the structure minimises merge conflicts: each
   screen lives in its own folder, and views pass state only through the
