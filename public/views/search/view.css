@@ -7,3 +7,5 @@
 .view-search .suggestion:disabled { opacity: 0.5; cursor: not-allowed; background: transparent; }
 .view-search .soon { font-size: 0.85em; font-style: italic; }
 .view-search input[aria-invalid="true"] { border-color: var(--bad); }
+.view-search .building-chip { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--accent-soft); }
+.view-search .building-chip > div { display: flex; flex-direction: column; min-width: 0; }
