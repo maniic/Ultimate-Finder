@@ -81,8 +81,12 @@ function searchIcon() {
 }
 
 export function render(root, params, nav) {
-  append(root, h('p', { class: 'muted' }, 'Loading buildings…'));
+  const loading = h('p', { class: 'muted' }, 'Loading buildings…');
+  append(root, loading);
+  // The router wipes root on navigation, so if the placeholder is gone a newer
+  // view owns root and this (stale) callback must not touch it.
   loadBuildings().then((buildings) => {
+    if (!root.contains(loading)) return;
     const code = String(params.b || '').toUpperCase();
     const chosen = buildings.find((b) => b.enabled && b.code === code);
     root.replaceChildren();
@@ -92,6 +96,7 @@ export function render(root, params, nav) {
     if (params.mode === 'room' || params.r) return drawRoom(root, chosen, params, nav);
     return drawChoice(root, chosen, nav);
   }).catch(() => {
+    if (!root.contains(loading)) return;
     root.replaceChildren(h('p', { class: 'message' }, "Couldn't load the building list. Check your connection and reload."));
   });
 }
@@ -117,7 +122,10 @@ function search(buildings, query) {
   }
   const facilities = q.length < 2 ? [] : FACILITY_TYPES
     .filter((t) => allTokens(q, `${t.name} ${t.id} ${KEYWORDS[t.id] || ''}`.toLowerCase()))
-    .map((t) => ({ t, count: FACILITIES.filter((f) => f.type === t.id && enabled.has(f.building)).length }));
+    .map((t) => {
+      const here = FACILITIES.filter((f) => f.type === t.id && enabled.has(f.building));
+      return { t, count: here.length, where: [...new Set(here.map((f) => f.building))].join(', ') };
+    });
   const blds = buildings.filter((b) => allTokens(q, `${b.code} ${b.name}`.toLowerCase()) &&
     (b.code.toLowerCase().startsWith(q) || b.name.toLowerCase().includes(q) || q.length >= 2));
   return { rooms, facilities, blds };
@@ -133,6 +141,7 @@ function drawLanding(root, buildings, nav, notice) {
     placeholder: 'Try "OI 10-210" or "water"',
     'aria-label': 'Search for a room, facility or building',
   });
+  const hint = h('p', { class: 'message', role: 'status' });
   let first; // what Enter opens
 
   function buildingCard(b) {
@@ -171,10 +180,10 @@ function drawLanding(root, buildings, nav, notice) {
       sections.push(h('section', { class: 'section' }, h('h2', { class: 'section-title' }, 'Rooms'), ...items));
     }
     if (res.facilities.length) {
-      const items = res.facilities.map(({ t, count }) => {
+      const items = res.facilities.map(({ t, count, where }) => {
         const href = nav.href('facilities', { type: t.id });
         if (count) first ??= href;
-        return row(t.id, href, t.name, count ? `${count} place${count === 1 ? '' : 's'} in OISE` : 'No locations yet', !count);
+        return row(t.id, href, t.name, count ? `${count} place${count === 1 ? '' : 's'} · ${where}` : 'No locations yet', !count);
       });
       sections.push(h('section', { class: 'section' }, h('h2', { class: 'section-title' }, 'Facilities'), ...items));
     }
@@ -192,10 +201,11 @@ function drawLanding(root, buildings, nav, notice) {
 
   function submit(e) {
     e.preventDefault();
-    if (first) location.hash = first;
+    if (first) { location.hash = first; return; }
+    hint.textContent = input.value.trim() ? 'Nothing available to open for that yet.' : 'Type a room, facility or building first.';
   }
 
-  input.addEventListener('input', draw);
+  input.addEventListener('input', () => { hint.textContent = ''; draw(); });
   grid.replaceChildren(...[...buildings].sort((a, b) =>
     (b.enabled - a.enabled) || ((b.code === last) - (a.code === last)) || a.name.localeCompare(b.name)).map(buildingCard));
 
@@ -205,7 +215,7 @@ function drawLanding(root, buildings, nav, notice) {
       h('p', null, 'Rooms, facilities and buildings, with step-by-step directions.'),
       h('form', { class: 'searchbox', onsubmit: submit, role: 'search' }, searchIcon(), input)),
     notice ? h('p', { class: 'message', role: 'status' }, notice) : null,
-    results, browse,
+    hint, results, browse,
   );
   draw();
 }
