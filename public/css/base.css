@@ -131,3 +131,28 @@ input:focus-visible, .btn:focus-visible, a:focus-visible, [tabindex]:focus-visib
 .sheet { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; padding: var(--gap); display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -6px 24px rgb(0 0 0 / 0.12); }
 
 .todo { font-size: 0.8rem; color: var(--muted); border: 1px dashed var(--border); border-radius: 8px; padding: 8px 10px; }
+
+/* Desktop only: show the phone-first app inside a phone-shaped frame. Purely
+   visual. Below 700px wide (real phones) none of this applies. The screen
+   scrolls inside the frame, so .app is the scroll container here. */
+@media (min-width: 700px) {
+  :root { --backdrop: #dde2e8; --bezel: #0b0d10; }
+  html { background: var(--backdrop); }
+  body { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: var(--backdrop); }
+  .app {
+    position: relative;
+    width: 390px; max-width: none; margin: 0;
+    height: min(844px, calc(100dvh - 48px)); min-height: 0;
+    overflow-y: auto; overscroll-behavior: contain;
+    border: 12px solid var(--bezel); border-radius: 48px;
+    box-shadow: 0 0 0 2px #2a2f36, 0 24px 60px rgb(0 0 0 / 0.35);
+  }
+  .app-header { position: sticky; top: 0; z-index: 1; padding-top: 34px; }
+  /* Camera pill. */
+  .app-header::before { content: ""; position: absolute; top: 9px; left: 50%; width: 84px; height: 20px; transform: translateX(-50%); border-radius: 999px; background: var(--bezel); }
+  .tabs { z-index: 1; }
+}
+@media (min-width: 700px) and (prefers-color-scheme: dark) {
+  :root { --backdrop: #05070a; --bezel: #2a2f36; }
+  .app { box-shadow: 0 0 0 2px #3a4048, 0 24px 60px rgb(0 0 0 / 0.6); }
+}
