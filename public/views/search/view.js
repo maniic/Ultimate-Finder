@@ -7,30 +7,58 @@
 //  - Think-aloud finding 3: people think in building NAMES. Name search works
 //    here; consider a browsable list of all buildings too.
 //  - HE4: recent destinations / saved rooms (lower priority).
-//  - Real building list (codes + names) instead of the mock in data.js.
 
 import { h, append } from '/js/ui.js';
-import { searchBuildings, getBuilding, getRoom, BUILDINGS } from '/js/data.js';
+import { ROOMS } from '/js/data.js';
 
 export const title = 'Find a room';
 
+// Buildings come from the database (GET /api/buildings). Ones with
+// enabled: false have no room data yet: they're listed but greyed out.
+async function loadBuildings() {
+  const res = await fetch('/api/buildings');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()).buildings;
+}
+
+// Accepts a code ("oi", "OI") or part of a name ("oise", "bahen").
+function matchBuildings(buildings, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return buildings.filter((b) => b.code.toLowerCase().startsWith(q) || b.name.toLowerCase().includes(q));
+}
+
 export function render(root, params, nav) {
-  let chosen = getBuilding(params.b);
+  let buildings = [];
+  let chosen;
+  let loadFailed = false;
 
   const buildingInput = h('input', {
     type: 'search', id: 'building', autocomplete: 'off', placeholder: 'e.g. OISE or OI',
-    value: chosen ? chosen.name : '', 'aria-describedby': 'building-hint',
+    'aria-describedby': 'building-hint',
   });
   const roomInput = h('input', { type: 'text', id: 'room', placeholder: 'e.g. 10-210', value: params.r || '', autocomplete: 'off' });
   const suggestions = h('ul', { class: 'suggestions', 'aria-label': 'Matching buildings' });
   const message = h('p', { class: 'message', role: 'status' });
 
+  const ready = loadBuildings().then((list) => {
+    buildings = list;
+    const fromUrl = buildings.find((b) => b.enabled && b.code === String(params.b || '').toUpperCase());
+    // Don't overwrite what the user has already started typing.
+    if (fromUrl && !buildingInput.value) { chosen = fromUrl; buildingInput.value = fromUrl.name; }
+  }).catch(() => {
+    loadFailed = true;
+    message.textContent = "Couldn't load the building list. Check your connection and reload.";
+  });
+
   function showSuggestions() {
     chosen = undefined;
-    const matches = buildingInput.value.trim().length >= 2 ? searchBuildings(buildingInput.value) : [];
-    suggestions.replaceChildren(...matches.map((b) =>
-      h('li', null, h('button', { type: 'button', class: 'suggestion', onclick: () => pick(b) },
-        h('strong', null, b.code), ' · ', b.name))));
+    const matches = buildingInput.value.trim().length >= 2 ? matchBuildings(buildings, buildingInput.value) : [];
+    suggestions.replaceChildren(...matches.map((b) => h('li', null,
+      h('button', {
+        type: 'button', class: 'suggestion', disabled: !b.enabled,
+        onclick: () => pick(b),
+      }, h('strong', null, b.code), ' · ', b.name, b.enabled ? '' : h('span', { class: 'soon' }, ' (coming soon)')))));
   }
 
   function pick(b) {
@@ -43,20 +71,29 @@ export function render(root, params, nav) {
 
   function didYouMean(text) {
     const first = text.trim()[0]?.toLowerCase();
-    return BUILDINGS.find((b) => b.code[0].toLowerCase() === first || b.name[0].toLowerCase() === first);
+    return buildings.find((b) => b.enabled && (b.code[0].toLowerCase() === first || b.name[0].toLowerCase() === first));
   }
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
+    await ready;
+    if (loadFailed) {
+      message.textContent = "Couldn't load the building list. Check your connection and reload.";
+      return;
+    }
     const text = buildingInput.value;
     if (!chosen) {
-      const matches = searchBuildings(text);
-      if (matches.length === 1) chosen = matches[0];
-    }
-    if (!chosen && searchBuildings(text).length > 1) {
-      message.textContent = 'Several buildings match. Pick one from the list.';
-      showSuggestions();
-      return;
+      const matches = matchBuildings(buildings, text);
+      const usable = matches.filter((b) => b.enabled);
+      if (usable.length === 1) chosen = usable[0];
+      else if (matches.length > 1) {
+        message.textContent = usable.length ? 'Several buildings match. Pick one from the list.' : "Those buildings aren't available yet.";
+        showSuggestions();
+        return;
+      } else if (matches.length === 1) {
+        message.textContent = `${matches[0].name} isn't available yet. Directions are coming soon.`;
+        return;
+      }
     }
     if (!chosen) {
       const guess = didYouMean(text);
@@ -70,14 +107,19 @@ export function render(root, params, nav) {
     }
     const room = roomInput.value.trim();
     if (!room) { message.textContent = 'Enter a room number.'; roomInput.focus(); return; }
-    if (!getRoom(chosen.code, room)) {
-      message.textContent = `We don't have directions to ${chosen.code} ${room} yet. (Mock data: try OI 10-210.)`;
+    const known = ROOMS[chosen.code] || [];
+    if (!known.some((r) => r.number === room)) {
+      message.textContent = `${chosen.code} has no room "${room}".` +
+        (known.length ? ` Rooms we know: ${known.map((r) => r.number).join(', ')}.` : '');
+      roomInput.setAttribute('aria-invalid', 'true');
+      roomInput.focus();
       return;
     }
     nav.go('preview', { b: chosen.code, r: room });
   }
 
   buildingInput.addEventListener('input', showSuggestions);
+  roomInput.addEventListener('input', () => roomInput.removeAttribute('aria-invalid'));
 
   append(root, 
     h('h1', null, 'Find a room'),
