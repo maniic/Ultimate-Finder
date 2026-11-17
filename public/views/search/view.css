@@ -1,11 +1,19 @@
-.view-search .suggestions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.view-search .suggestions:empty { display: none; }
-.view-search .suggestion { width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--accent-soft); color: var(--text); font: inherit; cursor: pointer; }
 .view-search .message:empty { display: none; }
 .view-search .message { color: var(--bad); }
 .view-search .linklike { background: none; border: none; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
-.view-search .suggestion:disabled { opacity: 0.5; cursor: not-allowed; background: transparent; }
-.view-search .soon { font-size: 0.85em; font-style: italic; }
 .view-search input[aria-invalid="true"] { border-color: var(--bad); }
-.view-search .building-chip { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--accent-soft); }
-.view-search .building-chip > div { display: flex; flex-direction: column; min-width: 0; }
+
+/* Step 1: building cards */
+.view-search .bgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.view-search .bcard { display: flex; flex-direction: column; gap: 4px; padding: 14px; min-height: 108px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); text-decoration: none; }
+.view-search a.bcard:hover { border-color: var(--accent); }
+.view-search .bcard.disabled { opacity: 0.45; cursor: not-allowed; background: transparent; }
+.view-search .code { align-self: flex-start; padding: 2px 8px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.04em; }
+.view-search .tag { margin-top: auto; align-self: flex-start; font-size: 0.75rem; font-weight: 600; color: var(--accent); }
+.view-search .tag.soon { color: var(--muted); font-style: italic; }
+
+/* Step 2: choices */
+.view-search .where { display: flex; align-items: center; gap: 12px; }
+.view-search .choice { display: flex; flex-direction: column; gap: 4px; padding: 20px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); text-decoration: none; }
+.view-search .choice strong { font-size: 1.15rem; }
+.view-search .choice:hover { border-color: var(--accent); }
