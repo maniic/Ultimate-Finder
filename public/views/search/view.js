@@ -31,6 +31,7 @@ function matchBuildings(buildings, query) {
 export function render(root, params, nav) {
   let buildings = [];
   let chosen;
+  let loadFailed = false;
 
   const buildingInput = h('input', {
     type: 'search', id: 'building', autocomplete: 'off', placeholder: 'e.g. OISE or OI',
@@ -43,8 +44,10 @@ export function render(root, params, nav) {
   const ready = loadBuildings().then((list) => {
     buildings = list;
     const fromUrl = buildings.find((b) => b.enabled && b.code === String(params.b || '').toUpperCase());
-    if (fromUrl) { chosen = fromUrl; buildingInput.value = fromUrl.name; }
+    // Don't overwrite what the user has already started typing.
+    if (fromUrl && !buildingInput.value) { chosen = fromUrl; buildingInput.value = fromUrl.name; }
   }).catch(() => {
+    loadFailed = true;
     message.textContent = "Couldn't load the building list. Check your connection and reload.";
   });
 
@@ -74,6 +77,10 @@ export function render(root, params, nav) {
   async function submit(e) {
     e.preventDefault();
     await ready;
+    if (loadFailed) {
+      message.textContent = "Couldn't load the building list. Check your connection and reload.";
+      return;
+    }
     const text = buildingInput.value;
     if (!chosen) {
       const matches = matchBuildings(buildings, text);
