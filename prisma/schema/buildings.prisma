@@ -1,0 +1,14 @@
+// Buildings feature (public/views/search, src/api/buildings.js).
+
+// Campus buildings for the search autocomplete. Rows are seeded at startup
+// from src/api/_buildings-seed.json (names and codes from
+// docs/St. George Campus Floor-Plan Atlas.pdf; OISE is from the mock data).
+// `enabled` is false until a building has room data and directions; the
+// search view shows disabled buildings greyed out and unselectable.
+// Seeding never overwrites `enabled`, so flipping it in the DB sticks.
+model Building {
+  code     String  @id @db.VarChar(32)
+  name     String  @db.VarChar(200)
+  category String  @db.VarChar(64)
+  enabled  Boolean @default(false)
+}

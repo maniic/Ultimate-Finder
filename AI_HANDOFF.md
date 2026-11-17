@@ -44,6 +44,24 @@ design changes on pp. 22–32.
 
 ## Decisions log
 
+- **2026-11-16: Buildings live in the DB; only OISE is enabled.** Branch
+  `view/search` (not yet reviewed or shipped).
+  - `Building` table (`prisma/schema/buildings.prisma`), seeded at startup
+    by `src/api/buildings.js` from `src/api/_buildings-seed.json`: 46
+    buildings from the floor-plan atlas plus OISE (not in the atlas).
+    A migration can't `INSERT` (additive-only checker), hence the startup
+    upsert. It never overwrites `enabled`.
+  - `enabled` is false for everything except OISE, the only building with
+    room data. The search view greys out disabled ones ("coming soon").
+    Flip a building on in the DB once it has rooms in `data.js`.
+  - Search autocomplete reads `GET /api/buildings`. Room validation still
+    uses `ROOMS` in `public/js/data.js` (campus reference data stays in the
+    repo).
+  - Atlas codes are kept as printed, including odd ones: `Graham`,
+    `Coach House`, `TF / MH / PI`, `HH6&8`, `HH2&96`. Worth a human check.
+  - `public/js/data.js` `BUILDINGS` is now unused by search but still used
+    by other views; left alone (shared file).
+
 - **2026-11-16: Postgres + Prisma 7, Docker for local dev, per-feature files.**
   Junaid wanted a database and Docker.
   - The server runs a **dedicated Postgres 17** (not the platform's shared
