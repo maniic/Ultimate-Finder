@@ -7,8 +7,6 @@
 
 const VIEWS = ['search', 'preview', 'floorplan', 'navigate', 'recover', 'facilities'];
 const DEFAULT_VIEW = 'search';
-// Which bottom tab is highlighted for each view.
-const TAB_FOR = { facilities: 'facilities' };
 
 const root = document.getElementById('view');
 
@@ -62,8 +60,6 @@ async function route() {
   root.replaceChildren();
   root.className = `view view-${name}`;
   document.title = mod.title ? `${mod.title} · Ultimate Finder` : 'Ultimate Finder';
-  const tab = TAB_FOR[name] || 'search';
-  document.querySelectorAll('[data-tab]').forEach((a) => (a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
   try {
     mod.render(root, params, nav);
   } catch (err) {
