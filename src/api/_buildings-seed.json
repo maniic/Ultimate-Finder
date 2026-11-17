@@ -1,0 +1,284 @@
+[
+  {
+    "code": "OI",
+    "name": "OISE · Ontario Institute for Studies in Education",
+    "category": "Academic building",
+    "enabled": true
+  },
+  {
+    "code": "AN",
+    "name": "Annesley Hall",
+    "category": "Residence / college housing",
+    "enabled": false
+  },
+  {
+    "code": "BA",
+    "name": "Bahen Centre for Information Technology",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "BR",
+    "name": "Brennan Hall",
+    "category": "Annotated outline supplement",
+    "enabled": false
+  },
+  {
+    "code": "LB",
+    "name": "Burwash Hall Lower Houses",
+    "category": "Residence / college housing",
+    "enabled": false
+  },
+  {
+    "code": "UB",
+    "name": "Burwash Hall Upper Houses",
+    "category": "Residence / college housing",
+    "enabled": false
+  },
+  {
+    "code": "CR",
+    "name": "Carr Hall",
+    "category": "Annotated outline supplement",
+    "enabled": false
+  },
+  {
+    "code": "Coach House",
+    "name": "Coach House - Centre for Culture and Technology",
+    "category": "Campus facility",
+    "enabled": false
+  },
+  {
+    "code": "PT",
+    "name": "D. L. Pratt Building",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "DA",
+    "name": "Daniels Building, One Spadina Crescent",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "PR",
+    "name": "E. J. Pratt Library",
+    "category": "Library / learning space",
+    "enabled": false
+  },
+  {
+    "code": "ES",
+    "name": "Earth Sciences Centre",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "EH",
+    "name": "Elmsley Hall",
+    "category": "Residence / college housing",
+    "enabled": false
+  },
+  {
+    "code": "EM",
+    "name": "Emmanuel College",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "EA",
+    "name": "Engineering Annex",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "FG",
+    "name": "FitzGerald Building",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "FH",
+    "name": "Founders House",
+    "category": "Annotated outline supplement",
+    "enabled": false
+  },
+  {
+    "code": "GA",
+    "name": "Gage Building",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "GB",
+    "name": "Galbraith Building",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "SM",
+    "name": "Gerstein Science Information Centre",
+    "category": "Library / learning space",
+    "enabled": false
+  },
+  {
+    "code": "HH6&8",
+    "name": "Gilson House + Maritain House",
+    "category": "Residence / college housing",
+    "enabled": false
+  },
+  {
+    "code": "GO",
+    "name": "Goldring Centre for High Performance Sport",
+    "category": "Campus facility",
+    "enabled": false
+  },
+  {
+    "code": "HH",
+    "name": "Hart House",
+    "category": "Campus facility",
+    "enabled": false
+  },
+  {
+    "code": "HS",
+    "name": "Health Sciences Building",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "IN",
+    "name": "Innis College",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "KL",
+    "name": "John M. Kelly Library",
+    "category": "Library / learning space",
+    "enabled": false
+  },
+  {
+    "code": "Graham",
+    "name": "John W. Graham Library",
+    "category": "Library / learning space",
+    "enabled": false
+  },
+  {
+    "code": "LW",
+    "name": "Law complex - Jackman, Flavelle and Bora Laskin Library",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "MG",
+    "name": "Margaret Addison Hall",
+    "category": "Residence / college housing",
+    "enabled": false
+  },
+  {
+    "code": "MP",
+    "name": "McLennan Physical Laboratories",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "MS",
+    "name": "Medical Sciences Building",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "AH",
+    "name": "Muzzo Family Alumni Hall",
+    "category": "Annotated outline supplement",
+    "enabled": false
+  },
+  {
+    "code": "MY",
+    "name": "Myhal Centre for Engineering Innovation & Entrepreneurship",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "OH",
+    "name": "Odette Hall",
+    "category": "Annotated outline supplement",
+    "enabled": false
+  },
+  {
+    "code": "RL",
+    "name": "Robarts Library",
+    "category": "Library / learning space",
+    "enabled": false
+  },
+  {
+    "code": "RS",
+    "name": "Rosebrugh Building",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "RT",
+    "name": "Rotman School of Management",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "RJ",
+    "name": "Rowell Jackman Hall",
+    "category": "Residence / college housing",
+    "enabled": false
+  },
+  {
+    "code": "SR",
+    "name": "Sam Sorbara Hall",
+    "category": "Residence / college housing",
+    "enabled": false
+  },
+  {
+    "code": "SF",
+    "name": "Sandford Fleming Building",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "SS",
+    "name": "Sidney Smith Hall",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "HH2&96",
+    "name": "Sullivan House + McCorkell House",
+    "category": "Residence / college housing",
+    "enabled": false
+  },
+  {
+    "code": "TF / MH / PI",
+    "name": "Teefy / More College / PIMS, 59 Queens Park Circle",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "RB",
+    "name": "Thomas Fisher Rare Book Library",
+    "category": "Library / learning space",
+    "enabled": false
+  },
+  {
+    "code": "UC",
+    "name": "University College",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "WW",
+    "name": "Woodsworth College",
+    "category": "Academic building",
+    "enabled": false
+  },
+  {
+    "code": "WO",
+    "name": "Woodsworth College Residence - classroom wing",
+    "category": "Academic building",
+    "enabled": false
+  }
+]
