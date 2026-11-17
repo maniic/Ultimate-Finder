@@ -60,7 +60,8 @@ export function render(root, params, nav) {
     root.replaceChildren();
     if (!chosen) return drawPicker(root, buildings, nav, params.b ? "That building isn't available yet." : '');
     rememberBuilding(chosen.code);
-    if (params.mode === 'room') return drawRoom(root, chosen, params, nav);
+    // The preview view's "Change room" link sends ?b=&r=, so a room param means step 3.
+    if (params.mode === 'room' || params.r) return drawRoom(root, chosen, params, nav);
     return drawChoice(root, chosen, nav);
   }).catch(() => {
     root.replaceChildren(h('p', { class: 'message' }, "Couldn't load the building list. Check your connection and reload."));
