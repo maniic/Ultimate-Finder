@@ -1,10 +1,14 @@
 // Owner: (your name here)
-// VIEW: Landing + room search. Three steps, all in this view, driven by URL
-// params so every step is linkable and the back button works:
-//   #/search                    1. choose a building (cards, with filter)
+// VIEW: Landing + search. Three steps, all in this view, driven by URL params
+// so every step is linkable and the back button works:
+//   #/search                    1. search anything, or pick a building
 //   #/search?b=OI               2. what do you need? Find a room / a facility
 //   #/search?b=OI&mode=room     3. enter the room number
-// Out: #/preview?b=<code>&r=<room>  ·  #/facilities?b=<code>
+// Out: #/preview?b=<code>&r=<room>  ·  #/facilities?type=<id>&b=<code>
+//
+// Step 1's search box takes a whole destination: "OI 10-210", "10-210",
+// "bahen", "bottle filler", "washroom". Results are grouped (rooms,
+// facilities, buildings) and Enter opens the top one.
 //
 // Buildings come from the database (GET /api/buildings). Ones with
 // enabled: false have no room data yet, so they're shown greyed out and
@@ -16,7 +20,7 @@
 //  - HE4: recent destinations / saved rooms (lower priority).
 
 import { h, append, backLink } from '/js/ui.js';
-import { ROOMS } from '/js/data.js';
+import { ROOMS, FACILITY_TYPES, FACILITIES } from '/js/data.js';
 
 export const title = 'Find a room';
 
@@ -40,16 +44,40 @@ function loadBuildings() {
   return buildingsPromise;
 }
 
-// Accepts a code ("oi", "OI") or part of a name ("oise", "bahen").
-function matches(b, query) {
-  const q = query.trim().toLowerCase();
-  return !q || b.code.toLowerCase().startsWith(q) || b.name.toLowerCase().includes(q);
-}
-
 // "OISE · Ontario Institute for Studies in Education" -> short + long parts.
 function splitName(name) {
   const [short, ...rest] = name.split(' · ');
   return { short, long: rest.join(' · ') };
+}
+
+// Words people type for each facility type, besides its name.
+const KEYWORDS = {
+  'bottle-filler': 'water bottle refill drink',
+  'water-fountain': 'water drink',
+  microwave: 'food heat lunch eat',
+  charging: 'charge outlet plug power phone',
+  washroom: 'bathroom toilet restroom wc',
+  prayer: 'pray multi-faith faith quiet',
+};
+const ICONS = { room: '🚪', 'bottle-filler': '💧', 'water-fountain': '🚰', microwave: '🍲', charging: '🔌', washroom: '🚻', prayer: '🕌' };
+
+function icon(kind) {
+  return h('span', { class: 'ico', 'aria-hidden': 'true' }, ICONS[kind] || '📍');
+}
+
+function searchIcon() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('class', 'search-ico');
+  svg.setAttribute('aria-hidden', 'true');
+  const c = document.createElementNS(ns, 'circle');
+  c.setAttribute('cx', '10.5'); c.setAttribute('cy', '10.5'); c.setAttribute('r', '6.5');
+  const l = document.createElementNS(ns, 'path');
+  l.setAttribute('d', 'm15.5 15.5 5 5');
+  for (const el of [c, l]) { el.setAttribute('fill', 'none'); el.setAttribute('stroke', 'currentColor'); el.setAttribute('stroke-width', '2.2'); el.setAttribute('stroke-linecap', 'round'); }
+  svg.append(c, l);
+  return svg;
 }
 
 export function render(root, params, nav) {
@@ -58,7 +86,7 @@ export function render(root, params, nav) {
     const code = String(params.b || '').toUpperCase();
     const chosen = buildings.find((b) => b.enabled && b.code === code);
     root.replaceChildren();
-    if (!chosen) return drawPicker(root, buildings, nav, params.b ? "That building isn't available yet." : '');
+    if (!chosen) return drawLanding(root, buildings, nav, params.b ? "That building isn't available yet." : '');
     rememberBuilding(chosen.code);
     // The preview view's "Change room" link sends ?b=&r=, so a room param means step 3.
     if (params.mode === 'room' || params.r) return drawRoom(root, chosen, params, nav);
@@ -68,64 +96,146 @@ export function render(root, params, nav) {
   });
 }
 
-// ---- step 1: choose a building ---------------------------------------------
+// ---- step 1: search anything, or pick a building ---------------------------
 
-function drawPicker(root, buildings, nav, notice) {
+// Every token the person typed has to appear somewhere in the haystack, so
+// "oi 10-210", "10-210" and "210" all find OISE 10-210.
+const allTokens = (q, hay) => q.split(/\s+/).filter(Boolean).every((t) => hay.includes(t));
+
+function search(buildings, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return null;
+  const enabled = new Set(buildings.filter((b) => b.enabled).map((b) => b.code));
+  const rooms = [];
+  for (const b of buildings.filter((x) => x.enabled)) {
+    for (const r of ROOMS[b.code] || []) {
+      // A room matches only if part of the query is about the room itself, so
+      // searching a building name doesn't list all of its rooms.
+      const own = `${r.number} ${r.type}`.toLowerCase();
+      if (allTokens(q, `${b.code} ${b.name} ${own}`.toLowerCase()) && q.split(/\s+/).some((t) => own.includes(t))) rooms.push({ b, r });
+    }
+  }
+  const facilities = q.length < 2 ? [] : FACILITY_TYPES
+    .filter((t) => allTokens(q, `${t.name} ${t.id} ${KEYWORDS[t.id] || ''}`.toLowerCase()))
+    .map((t) => ({ t, count: FACILITIES.filter((f) => f.type === t.id && enabled.has(f.building)).length }));
+  const blds = buildings.filter((b) => allTokens(q, `${b.code} ${b.name}`.toLowerCase()) &&
+    (b.code.toLowerCase().startsWith(q) || b.name.toLowerCase().includes(q) || q.length >= 2));
+  return { rooms, facilities, blds };
+}
+
+function drawLanding(root, buildings, nav, notice) {
   const last = lastBuilding();
+  const results = h('div', { class: 'results', role: 'region', 'aria-label': 'Search results', 'aria-live': 'polite' });
   const grid = h('div', { class: 'bgrid' });
-  const empty = h('p', { class: 'muted', role: 'status' });
-  const filter = h('input', {
-    type: 'search', id: 'building', autocomplete: 'off', placeholder: 'Search by name or code, like OISE or OI',
-    'aria-label': 'Search buildings',
+  const browse = h('section', { class: 'section' }, h('h2', { class: 'section-title' }, 'Buildings'), grid);
+  const input = h('input', {
+    type: 'search', id: 'q', autocomplete: 'off', enterkeyhint: 'go',
+    placeholder: 'Try "OI 10-210" or "water"',
+    'aria-label': 'Search for a room, facility or building',
   });
+  let first; // what Enter opens
 
-  function drawCards() {
-    const q = filter.value;
-    const list = buildings.filter((b) => matches(b, q)).sort((a, b) =>
-      (b.enabled - a.enabled) || ((b.code === last) - (a.code === last)) || a.name.localeCompare(b.name));
-    grid.replaceChildren(...list.map((b) => {
-      const { short, long } = splitName(b.name);
-      const inner = [
-        h('span', { class: 'code' }, b.code),
-        h('strong', null, short),
-        long ? h('span', { class: 'muted small' }, long) : null,
-        b.enabled ? (b.code === last ? h('span', { class: 'tag' }, 'Last used') : null) : h('span', { class: 'tag soon' }, 'Coming soon'),
-      ];
-      return b.enabled
-        ? h('a', { class: 'bcard', href: nav.href('search', { b: b.code }) }, inner)
-        : h('div', { class: 'bcard disabled', 'aria-disabled': 'true' }, inner);
-    }));
-    empty.textContent = list.length ? '' : `No building matches "${q.trim()}".`;
+  function buildingCard(b) {
+    const { short, long } = splitName(b.name);
+    const inner = [
+      h('span', { class: 'code' }, b.code),
+      h('strong', null, short),
+      long ? h('span', { class: 'muted small' }, long) : null,
+      b.enabled ? (b.code === last ? h('span', { class: 'tag' }, 'Last used') : null) : h('span', { class: 'tag soon' }, 'Coming soon'),
+    ];
+    return b.enabled
+      ? h('a', { class: 'bcard', href: nav.href('search', { b: b.code }) }, inner)
+      : h('div', { class: 'bcard disabled', 'aria-disabled': 'true' }, inner);
   }
 
-  filter.addEventListener('input', drawCards);
+  const row = (kind, href, main, sub, disabled) => (disabled
+    ? h('div', { class: 'row disabled', 'aria-disabled': 'true' }, icon(kind), h('div', { class: 'grow' }, h('strong', null, main), h('div', { class: 'muted small' }, sub)))
+    : h('a', { class: 'row', href }, icon(kind), h('div', { class: 'grow' }, h('strong', null, main), h('div', { class: 'muted small' }, sub)), h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')));
+
+  function draw() {
+    const res = search(buildings, input.value);
+    first = undefined;
+    if (!res) { // nothing typed: browse
+      results.replaceChildren();
+      browse.hidden = false;
+      return;
+    }
+    browse.hidden = true;
+    const sections = [];
+    if (res.rooms.length) {
+      const items = res.rooms.map(({ b, r }) => {
+        const href = nav.href('preview', { b: b.code, r: r.number });
+        first ??= href;
+        return row('room', href, `${splitName(b.name).short} · Room ${r.number}`, `${r.type} · floor ${r.floor}`);
+      });
+      sections.push(h('section', { class: 'section' }, h('h2', { class: 'section-title' }, 'Rooms'), ...items));
+    }
+    if (res.facilities.length) {
+      const items = res.facilities.map(({ t, count }) => {
+        const href = nav.href('facilities', { type: t.id });
+        if (count) first ??= href;
+        return row(t.id, href, t.name, count ? `${count} place${count === 1 ? '' : 's'} in OISE` : 'No locations yet', !count);
+      });
+      sections.push(h('section', { class: 'section' }, h('h2', { class: 'section-title' }, 'Facilities'), ...items));
+    }
+    if (res.blds.length) {
+      const items = res.blds.sort((a, b) => (b.enabled - a.enabled) || a.name.localeCompare(b.name)).map((b) => {
+        const href = nav.href('search', { b: b.code });
+        if (b.enabled) first ??= href;
+        return row('building', href, splitName(b.name).short, `${b.code}${b.enabled ? '' : ' · coming soon'}`, !b.enabled);
+      });
+      sections.push(h('section', { class: 'section' }, h('h2', { class: 'section-title' }, 'Buildings'), ...items));
+    }
+    results.replaceChildren(...(sections.length ? sections
+      : [h('p', { class: 'muted' }, `Nothing matches "${input.value.trim()}". Try a room like 10-210, a facility like "water", or a building name.`)]));
+  }
+
+  function submit(e) {
+    e.preventDefault();
+    if (first) location.hash = first;
+  }
+
+  input.addEventListener('input', draw);
+  grid.replaceChildren(...[...buildings].sort((a, b) =>
+    (b.enabled - a.enabled) || ((b.code === last) - (a.code === last)) || a.name.localeCompare(b.name)).map(buildingCard));
+
   append(root,
-    h('h1', null, 'Which building?'),
-    h('p', { class: 'muted' }, 'Pick where you are headed. You can find a room or a facility next.'),
+    h('header', { class: 'hero' },
+      h('h1', null, 'Find your way around St. George'),
+      h('p', null, 'Rooms, facilities and buildings, with step-by-step directions.'),
+      h('form', { class: 'searchbox', onsubmit: submit, role: 'search' }, searchIcon(), input)),
     notice ? h('p', { class: 'message', role: 'status' }, notice) : null,
-    filter, grid, empty,
+    results, browse,
   );
-  drawCards();
+  draw();
 }
 
 // ---- step 2: room or facility ----------------------------------------------
 
-function drawChoice(root, b, nav) {
+function buildingHero(b, nav, backHref, backLabel, heading) {
   const { short, long } = splitName(b.name);
+  return h('header', { class: 'hero compact' },
+    backLink(backHref, backLabel),
+    h('div', { class: 'where' }, h('span', { class: 'code solid' }, b.code),
+      h('div', null, h('strong', null, short), long ? h('div', { class: 'small' }, long) : null)),
+    h('h1', null, heading));
+}
+
+function drawChoice(root, b, nav) {
   const known = ROOMS[b.code] || [];
   append(root,
-    backLink(nav.href('search'), 'Change building'),
-    h('div', { class: 'where' },
-      h('span', { class: 'code' }, b.code),
-      h('div', null, h('strong', null, short), long ? h('div', { class: 'muted small' }, long) : null)),
-    h('h1', null, 'What do you need?'),
+    buildingHero(b, nav, nav.href('search'), 'Change building', 'What do you need?'),
     h('a', { class: 'choice', href: nav.href('search', { b: b.code, mode: 'room' }) },
-      h('strong', null, 'Find a room'),
-      h('span', { class: 'muted' }, 'Directions to a classroom, office or seminar room'),
-      known.length ? h('span', { class: 'muted small' }, `Try ${known.slice(0, 3).map((r) => r.number).join(', ')}`) : null),
+      icon('room'),
+      h('div', { class: 'grow' }, h('strong', null, 'Find a room'),
+        h('div', { class: 'muted' }, 'Directions to a classroom, office or seminar room'),
+        known.length ? h('div', { class: 'muted small' }, `Try ${known.slice(0, 3).map((r) => r.number).join(', ')}`) : null),
+      h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')),
     h('a', { class: 'choice', href: nav.href('facilities', { b: b.code }) },
-      h('strong', null, 'Find a facility'),
-      h('span', { class: 'muted' }, 'Bottle fillers, washrooms, microwaves, charging and more')),
+      icon('bottle-filler'),
+      h('div', { class: 'grow' }, h('strong', null, 'Find a facility'),
+        h('div', { class: 'muted' }, 'Bottle fillers, washrooms, microwaves, charging and more')),
+      h('span', { class: 'chev', 'aria-hidden': 'true' }, '›')),
   );
 }
 
@@ -162,10 +272,6 @@ function drawRoom(root, b, params, nav) {
     h('button', { type: 'submit', class: 'btn btn-primary' }, 'Find room'),
   );
 
-  append(root,
-    backLink(nav.href('search', { b: b.code }), splitName(b.name).short),
-    h('h1', null, 'Which room?'),
-    form,
-  );
+  append(root, buildingHero(b, nav, nav.href('search', { b: b.code }), 'Back', 'Which room?'), form);
   roomInput.focus();
 }
