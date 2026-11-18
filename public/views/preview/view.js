@@ -131,8 +131,9 @@ function fill(body, building, params, nav) {
         h('div', null, h('dt', null, 'Floor'), h('dd', null, room ? String(room.floor) : facility ? String(facility.floor) : '–'))),
       entranceNote,
     ) : null,
-    dest && !hasIndoorData ? h('p', { class: 'notice small' },
-      `Indoor directions for ${building.name} aren't ready yet, so this gets you to the entrance.`) : null,
+    dest && (!hasIndoorData || (room && !route)) ? h('p', { class: 'notice small' }, room
+      ? `Indoor directions to ${building.code} ${room.number} aren't ready yet, so this gets you to the entrance.`
+      : `Indoor directions for ${building.name} aren't ready yet, so this gets you to the entrance.`) : null,
     h('label', { class: 'card switch-row', for: 'stepfree' },
       toggle,
       h('span', null,

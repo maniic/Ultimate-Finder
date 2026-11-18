@@ -316,3 +316,11 @@ test('without an indoor route, the summary names the same entrance the map route
   assert.equal(entrance, 'Entrance B'); // St. George station is next to the Bedford Rd side
   await context.close();
 });
+
+test('a known room without indoor steps says indoor directions are not ready', async () => {
+  const { page, context } = await open('#/preview?b=OI&r=10-200');
+  await page.locator('[data-fake-map]').waitFor();
+  await page.getByText(/indoor directions .* aren.t ready/i).waitFor();
+  assert.equal(await page.getByRole('link', { name: /start route/i }).count(), 0);
+  await context.close();
+});
