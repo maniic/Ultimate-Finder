@@ -4,3 +4,33 @@
 .view-preview .switch-row { flex-direction: row; align-items: flex-start; gap: 12px; cursor: pointer; }
 .view-preview .switch-row input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--accent); flex: none; }
 .view-preview .block { display: block; }
+.view-preview .preview-body { display: flex; flex-direction: column; gap: var(--gap); }
+
+/* ---- outdoor map ---- */
+.view-preview .outdoor { gap: 12px; }
+.view-preview .map-box { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: var(--accent-soft); }
+.view-preview .map { width: 100%; aspect-ratio: 4 / 3; }
+.view-preview .map-expand { position: absolute; top: 8px; right: 8px; z-index: 1; box-shadow: 0 2px 6px rgb(0 0 0 / 0.15); }
+.view-preview .map-close { display: none; }
+.view-preview .btn-small { padding: 6px 10px; font-size: 0.875rem; }
+.view-preview .map-box.map-expanded { position: fixed; inset: 0; z-index: 50; border-radius: 0; border: 0; display: flex; flex-direction: column; }
+.view-preview .map-expanded .map { flex: 1; aspect-ratio: auto; }
+.view-preview .map-expanded .map-expand { display: none; }
+.view-preview .map-expanded .map-close { display: block; position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 12px; z-index: 1; box-shadow: 0 2px 8px rgb(0 0 0 / 0.2); }
+/* Full-screen map: stop the page behind it scrolling (cleared on navigation). */
+body.map-open { overflow: hidden; }
+.view-preview .map-fallback { padding: 16px; border: 1px dashed var(--border); border-radius: 10px; background: var(--accent-soft); }
+.view-preview .map-status { margin: 0; }
+.view-preview .map-steps { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.view-preview .map-steps-wrap summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.view-preview .map-start { display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
+.view-preview select { font: inherit; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); max-width: 100%; }
+.view-preview .arrival { display: flex; flex-direction: column; gap: 8px; }
+.view-preview .sim { border: 1px dashed var(--warn); border-radius: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.view-preview .sim legend { color: var(--warn); font-weight: 600; }
+
+/* Google map markers (content elements, so they can use our tokens) */
+.view-preview .map-pin { min-width: 26px; height: 26px; padding: 0 6px; border-radius: 13px; display: grid; place-items: center; background: var(--surface); color: var(--accent); border: 2px solid var(--accent); font: 700 0.8rem var(--font); box-shadow: 0 1px 4px rgb(0 0 0 / 0.25); }
+.view-preview .map-pin.is-dest { background: var(--accent); color: var(--on-accent); transform: scale(1.15); }
+.view-preview .map-dot { width: 16px; height: 16px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff; box-shadow: 0 0 0 6px rgb(26 115 232 / 0.25); transform: translateY(50%); }
+.view-preview [hidden] { display: none !important; }
