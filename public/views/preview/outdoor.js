@@ -79,3 +79,53 @@ export function hasArrived(position, target, radius = ARRIVAL_RADIUS_M) {
   if (typeof position.accuracy === 'number' && position.accuracy > MAX_FIX_ACCURACY_M) return false;
   return distanceMeters(position, target) <= radius;
 }
+
+// Entrances for a building: the shared ENTRANCES data (names, step-free),
+// plus coordinates and map-only entrances from this view's places.js,
+// matched by id. Works for any building code; nothing is per-building here.
+export function entrancesFor(code, shared, places) {
+  if (!code) return [];
+  const base = (shared && shared[code]) || [];
+  const extra = (places && places[code] && places[code].entrances) || [];
+  const byId = new Map(base.map((e) => [e.id, { ...e }]));
+  for (const p of extra) byId.set(p.id, { ...p, ...(byId.get(p.id) || {}), lat: p.lat, lng: p.lng });
+  return [...byId.values()];
+}
+
+// For a building we have no coordinates for: let Google find it by name.
+export function searchUrl(name) {
+  if (!name) return null;
+  const params = new URLSearchParams({ api: '1', query: `${name}, University of Toronto` });
+  return `https://www.google.com/maps/search/?${params}`;
+}
+
+// A google.maps.routes.Route (or a plain object shaped like one) →
+// { meters, minutes, steps: [text] }. Null if there's no distance.
+export function summarizeRoute(route) {
+  if (!route || typeof route.distanceMeters !== 'number') return null;
+  const meters = route.distanceMeters;
+  const minutes = typeof route.durationMillis === 'number'
+    ? Math.max(1, Math.ceil(route.durationMillis / 60000))
+    : walkMinutes(meters);
+  const steps = (route.legs || [])
+    .flatMap((leg) => leg.steps || [])
+    .map((s) => (s.instructions || '').trim())
+    .filter(Boolean);
+  return { meters, minutes, steps };
+}
+
+// Location simulator: move `meters` along the straight line toward target.
+export function stepToward(from, to, meters) {
+  const total = distanceMeters(from, to);
+  if (total <= meters) return { lat: to.lat, lng: to.lng };
+  const t = meters / total;
+  return { lat: from.lat + (to.lat - from.lat) * t, lng: from.lng + (to.lng - from.lng) * t };
+}
+
+// Where the outdoor route ends. If there's an indoor route, it starts at a
+// specific entrance, so go there (the inside steps then match). Otherwise
+// the nearest suitable entrance.
+export function chooseDestination(entrances, { routeEntranceId, stepFree = false, from = null } = {}) {
+  const fixed = routeEntranceId && (entrances || []).find((e) => e.id === routeEntranceId && isValidLatLng(e));
+  return fixed || pickEntrance(entrances, { stepFree, from });
+}

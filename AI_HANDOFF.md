@@ -44,6 +44,12 @@ design changes on pp. 22–32.
 
 ## Decisions log
 
+- **2026-11-18: Outdoor map on Route preview (branch `view/preview-map`, owner Abdullah, not yet shipped).**
+  - Google Maps JS API + Routes library (`Route.computeRoutes`, WALKING) in `public/views/preview/map.js`; location is asked only on "Directions from my location". Denied/unavailable → pick a start point. "Open in Google Maps" link is always there and is the fallback when there's no key or the script fails.
+  - Destination comes from the URL (b, r or fac), never a fixed building: if the room has an indoor route, go to the entrance it starts from; otherwise the nearest (step-free if on) entrance. Entrance coordinates live in `public/views/preview/places.js` (estimates, verify on site); buildings with none get a Google Maps search link.
+  - `?sim=1` adds a facilitator location simulator for indoor usability sessions.
+  - Key goes in `public/js/config.js` (restricted to the site + localhost referrers, Maps JavaScript API + Routes API). `localStorage.uf.mapsKey` overrides it locally.
+  - Tests: `npm test` (node:test; pure logic + Playwright browser tests with a fake google.maps, no key or DB needed).
 - **2026-11-16: Buildings live in the DB; only OISE is enabled.** Branch
   `view/search` (not yet reviewed or shipped).
   - `Building` table (`prisma/schema/buildings.prisma`), seeded at startup

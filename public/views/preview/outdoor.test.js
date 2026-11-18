@@ -126,3 +126,81 @@ test('hasArrived is false for missing positions', () => {
   assert.equal(hasArrived(null, OISE), false);
   assert.equal(hasArrived(OISE, null), false);
 });
+
+// ---- entrances from data, not hard-coded per building ----
+import { entrancesFor, searchUrl, summarizeRoute, stepToward } from './outdoor.js';
+
+const SHARED = {
+  OI: [
+    { id: 'A', name: 'Entrance A', detail: 'Bloor St W', stepFree: true, note: 'Ramp' },
+    { id: 'B', name: 'Entrance B', detail: 'Bedford Rd', stepFree: false, note: 'Stairs' },
+  ],
+};
+const PLACES = {
+  OI: { entrances: [{ id: 'A', lat: 43.1, lng: -79.1 }, { id: 'B', lat: 43.2, lng: -79.2 }] },
+  BA: { entrances: [{ id: 'M', name: 'Main entrance', detail: 'St. George St', stepFree: true, note: 'Automatic doors', lat: 43.3, lng: -79.3 }] },
+};
+
+test('entrancesFor adds coordinates to the shared entrance data by id', () => {
+  const es = entrancesFor('OI', SHARED, PLACES);
+  assert.deepEqual(es.map((e) => [e.id, e.name, e.lat]), [['A', 'Entrance A', 43.1], ['B', 'Entrance B', 43.2]]);
+});
+
+test('entrancesFor works for a building that only the map knows about', () => {
+  const es = entrancesFor('BA', SHARED, PLACES);
+  assert.equal(es.length, 1);
+  assert.equal(es[0].name, 'Main entrance');
+});
+
+test('entrancesFor keeps shared entrances without coordinates and returns [] for unknown buildings', () => {
+  assert.equal(entrancesFor('OI', SHARED, {}).length, 2);
+  assert.deepEqual(entrancesFor('ZZ', SHARED, PLACES), []);
+  assert.deepEqual(entrancesFor(undefined, SHARED, PLACES), []);
+});
+
+test('searchUrl builds a Google Maps search for a building with no coordinates', () => {
+  const url = new URL(searchUrl('Galbraith Building'));
+  assert.equal(url.origin + url.pathname, 'https://www.google.com/maps/search/');
+  assert.equal(url.searchParams.get('query'), 'Galbraith Building, University of Toronto');
+  assert.equal(searchUrl(''), null);
+});
+
+test('summarizeRoute turns a Routes API result into metres, minutes and step text', () => {
+  const route = {
+    distanceMeters: 640, durationMillis: 8.2 * 60000,
+    legs: [{ steps: [{ instructions: 'Head north on St. George St' }, { instructions: '' }, { instructions: 'Turn right' }] }],
+  };
+  assert.deepEqual(summarizeRoute(route), {
+    meters: 640, minutes: 9, steps: ['Head north on St. George St', 'Turn right'],
+  });
+});
+
+test('summarizeRoute estimates minutes from distance when duration is missing, and survives junk', () => {
+  assert.equal(summarizeRoute({ distanceMeters: 800 }).minutes, 10);
+  assert.equal(summarizeRoute(null), null);
+  assert.equal(summarizeRoute({}), null);
+});
+
+test('stepToward moves a point a set distance toward the target without overshooting', () => {
+  const start = { lat: 43.6644, lng: -79.3990 };
+  const target = { lat: 43.6683, lng: -79.3987 };
+  const total = distanceMeters(start, target);
+  const next = stepToward(start, target, 100);
+  assert.ok(Math.abs(distanceMeters(start, next) - 100) < 2);
+  assert.ok(Math.abs(distanceMeters(next, target) - (total - 100)) < 2);
+  assert.deepEqual(stepToward(start, target, total + 50), target);
+});
+
+import { chooseDestination } from './outdoor.js';
+
+test('chooseDestination uses the entrance the indoor route starts from, so inside steps match', () => {
+  const nearA = { lat: 43.66835, lng: -79.39870 };
+  assert.equal(chooseDestination(ENTRANCES, { routeEntranceId: 'B', from: nearA }).id, 'B');
+});
+
+test('chooseDestination falls back to the nearest suitable entrance when there is no indoor route', () => {
+  const nearB = { lat: 43.66805, lng: -79.39940 };
+  assert.equal(chooseDestination(ENTRANCES, { from: nearB }).id, 'B');
+  assert.equal(chooseDestination(ENTRANCES, { routeEntranceId: 'Z', from: nearB, stepFree: true }).id, 'A');
+  assert.equal(chooseDestination([], {}), null);
+});
