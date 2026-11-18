@@ -18,7 +18,7 @@
 //  - Verify entrance coordinates in places.js on site.
 
 import { h, append, backLink, minutes } from '/js/ui.js';
-import { getBuilding, getRoom, getRoute, getEntrance, ENTRANCES, FACILITIES, facilityTypeName } from '/js/data.js';
+import { getBuilding, getRoom, getRoute, getEntrance, ENTRANCES, FACILITIES, ROOMS, facilityTypeName } from '/js/data.js';
 import { outdoorMap } from './map.js';
 import { chooseDestination, entrancesFor, searchUrl } from './outdoor.js';
 import { PLACES } from './places.js';
@@ -29,7 +29,7 @@ export const title = 'Route preview';
 let buildingsPromise;
 function apiBuilding(code) {
   buildingsPromise ??= fetch('/api/buildings')
-    .then((res) => (res.ok ? res.json() : { buildings: [] }))
+    .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
     .then((d) => d.buildings || [])
     .catch(() => { buildingsPromise = undefined; return []; });
   return buildingsPromise.then((list) => list.find((b) => b.code === code));
@@ -64,6 +64,16 @@ function fill(body, building, params, nav) {
   const room = !facility && params.r ? getRoom(building.code, params.r) : null;
   const route = room && getRoute(building.code, room.number, stepFree ? 'stepfree' : 'standard');
   const routeEntrance = route && getEntrance(building.code, route.entrance);
+  const hasIndoorData = (ROOMS[building.code] || []).length > 0;
+
+  // A room or facility we don't know: say so rather than guess.
+  if ((params.r && !room && hasIndoorData) || (params.fac && !facility)) {
+    append(body, backLink(nav.href('search', { b: building.code })),
+      h('p', null, params.fac
+        ? `We couldn't find that facility in ${building.name}. Go back and search again.`
+        : `We couldn't find room ${params.r} in ${building.name}. Check the number and search again.`));
+    return;
+  }
 
   const entrances = entrancesFor(building.code, ENTRANCES, PLACES);
   const dest = chooseDestination(entrances, { routeEntranceId: route?.entrance, stepFree });
@@ -83,6 +93,23 @@ function fill(body, building, params, nav) {
   else if (facility && building.hasPlans) arrival = { href: nav.href('floorplan', { b: building.code, f: facility.floor }), label: 'Continue inside' };
 
   const walkDd = h('dd', null, '–');
+  // The entrance can change once a start point is known (nearest one), so
+  // these are updated from the map's onRoute.
+  const shown = routeEntrance || dest;
+  const entranceDd = h('dd', null, shown ? shown.name : '–');
+  const entranceNote = h('p', { class: 'small' });
+  const stepFreeText = h('span', { class: 'muted small block' });
+  function showEntrance(e) {
+    if (!e) return;
+    entranceDd.textContent = e.name;
+    const bits = [e.detail, e.note].filter(Boolean);
+    entranceNote.textContent = bits.length ? `${bits.join('. ')}.` : '';
+    entranceNote.hidden = !bits.length;
+    stepFreeText.textContent = stepFree
+      ? `On: avoids all stairs. Uses ${e.name}${e.note ? ` (${e.note.toLowerCase()})` : ''}.`
+      : 'Avoids stairs. Uses ramps and elevators only.';
+  }
+  if (shown) showEntrance(shown); else stepFreeText.textContent = 'Avoids stairs. Uses ramps and elevators only.';
   const toggle = h('input', {
     type: 'checkbox', role: 'switch', id: 'stepfree', checked: stepFree,
     onchange: (e) => nav.go('preview', keep({ stepfree: e.target.checked ? '1' : undefined }), { keepFocus: 'stepfree' }),
@@ -93,26 +120,24 @@ function fill(body, building, params, nav) {
     h('div', null, h('h1', null, heading), sub ? h('p', { class: 'muted' }, sub) : null),
     dest
       ? outdoorMap({ entrances, routeEntranceId: route?.entrance, stepFree, sim, arrival,
-        onRoute: (s) => { walkDd.textContent = s ? minutes(s.minutes) : '–'; } })
+        onRoute: (s, e) => { walkDd.textContent = s ? minutes(s.minutes) : '–'; showEntrance(e); } })
       : h('div', { class: 'card' },
         h('p', null, "We don't have this building's entrances on our map yet."),
         searchUrl(building.name) ? h('a', { class: 'btn', target: '_blank', rel: 'noopener', href: searchUrl(building.name) }, 'Find it in Google Maps') : null),
     dest ? h('div', { class: 'card summary' },
       h('dl', { class: 'facts' },
         h('div', null, h('dt', null, 'Walk'), walkDd),
-        h('div', null, h('dt', null, 'Entrance'), h('dd', null, (routeEntrance || dest).name)),
+        h('div', null, h('dt', null, 'Entrance'), entranceDd),
         h('div', null, h('dt', null, 'Floor'), h('dd', null, room ? String(room.floor) : facility ? String(facility.floor) : '–'))),
-      (routeEntrance || dest).detail ? h('p', { class: 'small' }, [(routeEntrance || dest).detail, (routeEntrance || dest).note].filter(Boolean).join('. '), '.') : null,
+      entranceNote,
     ) : null,
-    dest && !route && !facility ? h('p', { class: 'notice small' },
+    dest && !hasIndoorData ? h('p', { class: 'notice small' },
       `Indoor directions for ${building.name} aren't ready yet, so this gets you to the entrance.`) : null,
     h('label', { class: 'card switch-row', for: 'stepfree' },
       toggle,
       h('span', null,
         h('strong', null, 'Step-free route (accessibility)'),
-        h('span', { class: 'muted small block' }, stepFree && dest
-          ? `On: avoids all stairs. Uses ${dest.name}${dest.note ? ` (${dest.note.toLowerCase()})` : ''}.`
-          : 'Avoids stairs. Uses ramps and elevators only.'))),
+        stepFreeText)),
     route ? h('div', { class: 'btn-row' },
       h('a', { class: 'btn', href: nav.href('floorplan', { b: building.code, f: room.floor, r: room.number, stepfree: stepFree ? '1' : undefined }) }, 'Show floor plan'),
       h('a', { class: 'btn btn-primary', href: nav.href('navigate', { b: building.code, r: room.number, stepfree: stepFree ? '1' : undefined, step: 1 }) }, 'Start route')) : null,

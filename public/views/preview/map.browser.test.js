@@ -96,11 +96,23 @@ async function open(path, { key = 'test-key', geo = 'none', mapsScript = 'fake',
     if (mapsScript === 'fail') return route.abort();
     return route.fulfill({ contentType: 'text/javascript', body: FAKE_MAPS });
   });
+  // "No key" means no committed key either.
+  if (!key) {
+    await page.route('**/js/config.js', (route) => route.fulfill({ contentType: 'text/javascript', body: "export const GOOGLE_MAPS_API_KEY = '';" }));
+  }
   await page.addInitScript(([k, g]) => {
     if (k) localStorage.setItem('uf.mapsKey', k);
     if (g === 'denied') {
       navigator.geolocation.getCurrentPosition = (_ok, err) => setTimeout(() => err({ code: 1, message: 'denied' }), 10);
       navigator.geolocation.watchPosition = (_ok, err) => { setTimeout(() => err({ code: 1, message: 'denied' }), 10); return 1; };
+    }
+    if (g === 'fix-then-timeout') {
+      navigator.geolocation.watchPosition = (ok, err) => {
+        setTimeout(() => ok({ coords: { latitude: 43.66443, longitude: -79.39915, accuracy: 10 } }), 10);
+        setTimeout(() => err({ code: 3, message: 'timeout' }), 300);
+        return 1;
+      };
+      navigator.geolocation.clearWatch = () => { window.__cleared = (window.__cleared || 0) + 1; };
     }
   }, [key, geo]);
   await page.goto(`${base}/${path}`);
@@ -251,5 +263,56 @@ test('fits a phone screen with no sideways scroll', async () => {
   await page.locator('[data-fake-map]').waitFor();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   assert.ok(overflow <= 0, `overflows by ${overflow}px`);
+  await context.close();
+});
+
+test('an unknown room in a building with indoor data says so', async () => {
+  const { page, context, errors } = await open('#/preview?b=OI&r=99-999');
+  await page.getByText(/couldn.t find room 99-999/i).waitFor();
+  assert.equal(await page.getByText(/aren.t ready yet/i).count(), 0);
+  assert.equal(await page.locator('[data-fake-map]').count(), 0);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test('an unknown facility says so instead of silently showing the building', async () => {
+  const { page, context } = await open('#/preview?b=BA&fac=f1');
+  await page.getByText(/couldn.t find that facility/i).waitFor();
+  await context.close();
+});
+
+test('leaving the page while the map is full screen does not lock scrolling elsewhere', async () => {
+  const { page, context } = await open('#/preview?b=OI&r=10-210');
+  await page.locator('[data-fake-map]').waitFor();
+  await page.getByRole('button', { name: /full screen/i }).click();
+  assert.equal(await page.evaluate(() => document.body.classList.contains('map-open')), true);
+  await page.evaluate(() => { location.hash = '#/search'; });
+  await page.waitForFunction(() => !document.querySelector('.view-preview'));
+  assert.equal(await page.evaluate(() => document.body.classList.contains('map-open')), false);
+  await context.close();
+});
+
+test('a location timeout after the first fix keeps live tracking and the route', async () => {
+  const { page, context, errors } = await open('#/preview?b=OI&r=10-210', { geo: 'fix-then-timeout' });
+  await page.locator('[data-fake-map]').waitFor();
+  await page.getByRole('button', { name: /directions from my location/i }).click();
+  await page.getByText('640 m').waitFor();
+  await page.waitForTimeout(500);
+  assert.ok(await page.getByText('640 m').isVisible());
+  assert.equal(await page.getByText(/took too long/i).count(), 0);
+  assert.equal(await page.evaluate(() => window.__cleared || 0), 0);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test('without an indoor route, the summary names the same entrance the map routes to', async () => {
+  const { page, context } = await open('#/preview?b=OI&sim=1');
+  await page.locator('[data-fake-map]').waitFor();
+  await page.getByLabel(/pretend i.m at/i).selectOption({ label: 'St. George subway station' });
+  await page.getByText('640 m').waitFor();
+  const status = await page.locator('.map-status').innerText();
+  const entrance = await page.locator('.facts div:nth-child(2) dd').innerText();
+  assert.ok(status.includes(entrance), `status "${status}" vs summary "${entrance}"`);
+  assert.equal(entrance, 'Entrance B'); // St. George station is next to the Bedford Rd side
   await context.close();
 });

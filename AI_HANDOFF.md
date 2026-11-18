@@ -49,7 +49,8 @@ design changes on pp. 22–32.
   - Destination comes from the URL (b, r or fac), never a fixed building: if the room has an indoor route, go to the entrance it starts from; otherwise the nearest (step-free if on) entrance. Entrance coordinates live in `public/views/preview/places.js` (estimates, verify on site); buildings with none get a Google Maps search link.
   - `?sim=1` adds a facilitator location simulator for indoor usability sessions.
   - Key goes in `public/js/config.js` (restricted to the site + localhost referrers, Maps JavaScript API + Routes API). `localStorage.uf.mapsKey` overrides it locally.
-  - Tests: `npm test` (node:test; pure logic + Playwright browser tests with a fake google.maps, no key or DB needed).
+  - Tests: `npm test` (node:test; pure logic + Playwright browser tests with a fake google.maps, no key or DB needed). The fake must mirror the real library split (e.g. `LatLngBounds` is in `core`), or real-key bugs slip through.
+  - Unknown room in a building with indoor data, or an unknown facility, shows a "couldn't find" message instead of a map. After the first location fix, timeouts are ignored (only a denied permission stops tracking).
 - **2026-11-16: Buildings live in the DB; only OISE is enabled.** Branch
   `view/search` (not yet reviewed or shipped).
   - `Building` table (`prisma/schema/buildings.prisma`), seeded at startup

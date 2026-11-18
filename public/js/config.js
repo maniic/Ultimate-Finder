@@ -2,7 +2,7 @@
 // only put values here that are safe to be public.
 //
 // GOOGLE_MAPS_API_KEY: a browser key, restricted in Google Cloud to
-//   - website referrers ultimate-finder.junaidarshad.com/* and localhost:3000/*
+//   - website referrers ultimate-finder.junaidarshad.com/*, localhost:3000/* and localhost:3001/*
 //   - the Maps JavaScript API and the Routes API only.
 // Never commit an unrestricted key. Empty = the map falls back to an
 // "Open in Google Maps" link.

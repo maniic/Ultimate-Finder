@@ -64,8 +64,13 @@ const GEO_MESSAGES = {
 
 // opts: { entrances, routeEntranceId, stepFree, sim, arrival: { href, label } | null,
 //         onRoute(summary) }
+let authListener = null;
+
 export function outdoorMap(opts) {
   stopWatch();
+  // A previous render may have left full screen on (Back while expanded).
+  document.body.classList.remove('map-open');
+  if (authListener) window.removeEventListener('uf-maps-auth-failure', authListener);
   const { entrances, routeEntranceId, stepFree, sim, arrival, onRoute = () => {} } = opts;
   const state = { origin: null, position: null, dest: null, maps: null, map: null, lines: [], dot: null, pins: new Map(), arrived: false };
   state.dest = chooseDestination(entrances, { routeEntranceId, stepFree });
@@ -98,6 +103,9 @@ export function outdoorMap(opts) {
   function setExpanded(on) {
     mapBox.classList.toggle('map-expanded', on);
     document.body.classList.toggle('map-open', on);
+    // Leaving the view while expanded (Back, a link) must not leave the
+    // page scroll-locked.
+    if (on) window.addEventListener('hashchange', () => document.body.classList.remove('map-open'), { once: true });
     (on ? closeBtn : expandBtn).focus();
   }
   mapBox.addEventListener('keydown', (e) => { if (e.key === 'Escape') setExpanded(false); });
@@ -124,6 +132,7 @@ export function outdoorMap(opts) {
     mapBox.replaceWith(h('div', { class: 'map-fallback small muted' }, 'Live map not set up yet. Use Open in Google Maps for walking directions.'));
   } else {
     loadGoogleMaps(key).then(drawMap).catch(mapFailed);
+    authListener = mapFailed;
     window.addEventListener('uf-maps-auth-failure', mapFailed, { once: true });
   }
 
@@ -171,7 +180,7 @@ export function outdoorMap(opts) {
     highlightDest();
     gmLink.href = directionsUrl({ origin, destination: state.dest });
     setStatus();
-    if (!state.maps) { onRoute(null); return; }
+    if (!state.maps) { onRoute(null, state.dest); return; }
     try {
       const { Route } = await state.maps.gm.importLibrary('routes');
       const { routes } = await Route.computeRoutes({
@@ -189,15 +198,16 @@ export function outdoorMap(opts) {
       const bounds = new LatLngBounds();
       bounds.extend(origin); bounds.extend({ lat: state.dest.lat, lng: state.dest.lng });
       state.map.fitBounds(bounds, 48);
+      showNotice('');
       setStatus(summary);
       stepsList.replaceChildren(...summary.steps.map((t) => h('li', null, t)));
       steps.hidden = summary.steps.length === 0;
-      onRoute(summary);
+      onRoute(summary, state.dest);
     } catch (err) {
       if (seq !== routeSeq) return;
       console.warn('Walking route failed', err);
       showNotice("We couldn't get walking directions here. Open in Google Maps has them.");
-      onRoute(null);
+      onRoute(null, state.dest);
     }
   }
 
@@ -237,8 +247,12 @@ export function outdoorMap(opts) {
       setPosition(p);
     }, (err) => {
       if (!root.isConnected) { stopWatch(); return; }
+      const kind = geoErrorState(err);
+      // After the first fix, a timeout or a lost signal is temporary: keep
+      // the route and keep watching. Only stop if permission is withdrawn.
+      if (!first && kind !== 'denied') return;
       stopWatch();
-      geoFailed(geoErrorState(err));
+      geoFailed(kind);
     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 });
   }
 
