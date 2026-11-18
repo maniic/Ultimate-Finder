@@ -185,7 +185,8 @@ export function outdoorMap(opts) {
       state.lines.forEach((l) => l.setMap(null));
       state.lines = best.createPolylines();
       state.lines.forEach((l) => l.setMap(state.map));
-      const bounds = new (await state.maps.gm.importLibrary('maps')).LatLngBounds();
+      const { LatLngBounds } = await state.maps.gm.importLibrary('core');
+      const bounds = new LatLngBounds();
       bounds.extend(origin); bounds.extend({ lat: state.dest.lat, lng: state.dest.lng });
       state.map.fitBounds(bounds, 48);
       setStatus(summary);

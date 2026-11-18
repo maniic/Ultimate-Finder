@@ -56,9 +56,10 @@ after(async () => {
 const FAKE_MAPS = `
   window.__fake = { routeRequests: [], markers: [], maps: 0 };
   class LatLngBounds { extend() { return this; } }
+  // Same split as the real API: LatLngBounds is in 'core', not 'maps'.
   const libs = {
+    core: { LatLngBounds },
     maps: {
-      LatLngBounds,
       Map: class { constructor(el) { window.__fake.maps++; el.dataset.fakeMap = '1'; }
         fitBounds() {} panTo() {} setCenter() {} setZoom() {} },
     },

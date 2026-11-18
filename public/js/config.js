@@ -10,4 +10,4 @@
 // To try a key locally without committing it, run this once in the browser
 // console:  localStorage.setItem('uf.mapsKey', '<your key>')
 
-export const GOOGLE_MAPS_API_KEY = '';
+export const GOOGLE_MAPS_API_KEY = 'AIzaSyD5mwU3iS91lZLvqQrABplDOw_cMgkjsCA';
