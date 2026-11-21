@@ -1,5 +1,15 @@
 .view-recover .sheet { margin-top: auto; }
 .view-recover .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .view-recover .choice { padding: 10px; gap: 6px; color: var(--text); text-decoration: none; }
-.view-recover .choice:hover { border-color: var(--accent); }
+.view-recover .choice:hover, .view-recover .choice:focus-visible { border-color: var(--accent); }
 .view-recover .choice .photo { aspect-ratio: 1; font-size: 0.8rem; }
+/* As prominent as the photo cards (A2 finding: "I'm not sure" must not hide). */
+.view-recover .unsure { width: 100%; }
+.view-recover .question { margin-top: 4px; }
+.view-recover .floor-pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.view-recover .room-sign { display: flex; flex-direction: column; gap: 8px; font-weight: 600; }
+.view-recover .room-sign input { flex: 2; min-width: 0; }
+.view-recover .room-sign .btn { flex: 1; }
+.view-recover .room-sign .notice { font-weight: normal; }
+.view-recover .rejoin { padding: 12px; gap: 4px; }
+.view-recover .notice .btn { margin-top: 8px; }

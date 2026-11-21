@@ -4,7 +4,7 @@
 > at the end of every working pass: move finished items, record decisions with
 > their why, keep "Next up" honest. Record the current state, not a transcript.
 
-**Last updated:** 2026-11-16 (session 1: scaffold, views, DB + Docker)
+**Last updated:** 2026-11-21 (recover view: "I don't know where I am")
 
 ## Current state
 
@@ -43,6 +43,13 @@ design changes on pp. 22–32.
   names as well as codes (done in the starter).
 
 ## Decisions log
+
+- **2026-11-21: "I don't know where I am" recovery (branch `view/recover`, owner Abdullah).** Answers the A2 severity-3 finding.
+  - Recover menu leads with "I don't know where I am". Users place themselves by tapping a photo card of what they can see (every labelled item on the floor plans: lobby, elevators, stairs, entrances, room plates), filtered by floor, or via "I'm not sure": which floor number is on the nearest sign, or type a door-plate number. "Can't see any sign" says to walk to an elevator/stairwell or ask at the lobby desk.
+  - A confirm screen shows the spot on the plan with the new path, "First, head toward …", then "Start directions from here" opens navigate at the rejoin step. Pure logic in `public/views/recover/reroute.js` (unit-tested), view flow in `recover.browser.test.js`.
+  - Rejoin = nearest piece of the route on that floor; continue at its start if you're before it, else at its end. Never rejoin at the entrance step unless you're at an entrance. Blocked (or already-blocked) routes use `blockedElevator`; step-free stays on. Standing at the destination says "You're already there".
+  - Kept in scope: spots come from `FLOORS` in shared `data.js`; captions live in `reroute.js`. `LOCATION_CHOICES` in `data.js` is now unused (left alone, shared file). Navigate's "avoiding the blocked elevator" notice is the only cue on the navigate side.
+  - Photos are placeholders; take real ones for each spot.
 
 - **2026-11-18: Outdoor map on Route preview (branch `view/preview-map`, owner Abdullah, not yet shipped).**
   - Google Maps JS API + Routes library (`Route.computeRoutes`, WALKING) in `public/views/preview/map.js`; location is asked only on "Directions from my location". Denied/unavailable → pick a start point. "Open in Google Maps" link is always there and is the fallback when there's no key or the script fails.
