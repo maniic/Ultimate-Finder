@@ -386,5 +386,33 @@ test('opened from Facilities, the back link returns to Facilities', async () => 
   assert.match(href, /type=bottle-filler/);
   assert.match(href, /b=OI/);
   assert.match(href, /stepfree=1/);
+  assert.match(href, /id=f1/, 'returns to the same facility card');
+  await context.close();
+});
+
+test('standard route to a step-free entrance does not warn about stairs there', async () => {
+  const { page, context } = await open('#/preview?b=OI');
+  const box = page.locator('.stepfree-info');
+  await box.waitFor();
+  const text = await box.innerText();
+  assert.doesNotMatch(text, /it may use stairs: entrance b/i, 'Entrance B is not on this route');
+  assert.match(text, /other entrances have stairs: entrance b/i);
+  await context.close();
+});
+
+test('the wheelchair symbol is hidden from screen readers', async () => {
+  const { page, context } = await open('#/preview?b=OI&r=10-210&stepfree=1');
+  await page.locator('.stepfree-info').waitFor();
+  const name = await page.locator('#stepfree').evaluate((el) => {
+    const c = el.cloneNode(true); c.querySelectorAll('[aria-hidden="true"]').forEach((x) => x.remove()); return c.textContent.trim();
+  });
+  assert.equal(name, 'Step-free');
+  const heading = await page.locator('.stepfree-info strong').evaluate((el) => {
+    const c = el.cloneNode(true); c.querySelectorAll('[aria-hidden="true"]').forEach((x) => x.remove()); return c.textContent.trim();
+  });
+  assert.equal(heading, 'Step-free route is on');
+  // Badge is not a stray child of the <dl> row.
+  assert.equal(await page.locator('.summary dl > div > .badge-stepfree').count(), 0);
+  assert.ok(await page.locator('.summary .badge-stepfree').isVisible());
   await context.close();
 });
