@@ -1,8 +1,11 @@
 .view-facilities .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .view-facilities .type { text-decoration: none; color: var(--text); font-weight: 600; min-height: 72px; justify-content: center; }
-.view-facilities .type:hover, .view-facilities .result:hover { border-color: var(--accent); }
+.view-facilities .type:hover, .view-facilities .result:hover, .view-facilities .choice:hover { border-color: var(--accent); }
 .view-facilities .results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.view-facilities .result { text-decoration: none; color: var(--text); gap: 4px; }
+.view-facilities .result { flex-direction: row; align-items: center; gap: 10px; }
+.view-facilities .result-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--text); }
+.view-facilities .row { gap: 8px; align-items: baseline; }
+.view-facilities .row > :last-child { white-space: nowrap; }
 .view-facilities .row { display: flex; justify-content: space-between; }
 .view-facilities .plan-mini { max-height: 160px; }
 .view-facilities .reports-section { display: flex; flex-direction: column; gap: 10px; }
@@ -10,3 +13,12 @@
 .view-facilities .reports li { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
 .view-facilities .report-form[hidden] { display: none; }
 .view-facilities .btn[hidden] { display: none; }
+.view-facilities .block { display: block; }
+.view-facilities .grow { flex: 1; min-width: 0; }
+.view-facilities .anchor { flex-direction: row; align-items: center; gap: 10px; padding: 12px var(--gap); }
+.view-facilities .btn-small { padding: 8px 12px; font-size: 0.875rem; flex: none; }
+.view-facilities .badge { align-self: flex-start; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.view-facilities .section-title { font-size: 0.95rem; margin: 16px 0 8px; color: var(--muted); }
+.view-facilities .choices { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.view-facilities .choice { text-decoration: none; color: var(--text); gap: 2px; padding: 12px var(--gap); }
+.view-facilities .choice.is-current { border-color: var(--accent); background: var(--accent-soft); }
