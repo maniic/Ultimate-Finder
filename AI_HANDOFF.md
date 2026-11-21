@@ -4,7 +4,7 @@
 > at the end of every working pass: move finished items, record decisions with
 > their why, keep "Next up" honest. Record the current state, not a transcript.
 
-**Last updated:** 2026-11-21 (recover view: "I don't know where I am")
+**Last updated:** 2026-11-21 (facilities: "nearest to what?" + Walk there)
 
 ## Current state
 
@@ -43,6 +43,14 @@ design changes on pp. 22–32.
   names as well as codes (done in the starter).
 
 ## Decisions log
+
+- **2026-11-21: Facilities "nearest to what?" + Walk there (branch `view/facilities`, owner Abdullah).**
+  - The list ranks facilities by walk time from an anchor in the URL: `b` plus one of `r` (room), `e` (entrance) or `f` (floor, taken as by the elevators). Only `b` = its first entrance (first step-free one with `stepfree=1`). No `b` = the first building that has facility data, so search's `?type=` links still work and nothing is hard-coded to OISE. A "Near … · Change" card opens `&pick=1`, a chooser of entrances, floors, rooms and other buildings. Unknown building/room/entrance/floor says so and offers the chooser.
+  - Walk times are computed in `public/views/facilities/nearest.js` (unit-tested), not read from `FACILITIES[].walkMin` (now unused by this view, left alone in shared `data.js`): x + y distance on the plan grid (a rough stand-in for corridors) at 30 units/min, plus 4 min elevator wait + 0.2 min/floor via whichever elevator is shortest. Tuned so Entrance A → 10-210 is 9 min, matching the mock `ROUTES` times (9–11), so facilities and navigate don't disagree. Ranking uses the unrounded estimate. Floors without a plan reuse the elevator positions from floors that have one. Estimates, not verified on site.
+  - Ties go to the working one. If the nearest isn't working, a notice points to the nearest working one.
+  - "Walk there" (on each result and the detail screen) opens `#/preview?b&fac[&stepfree]`, the walking map to the building, which then continues to the floor plan. With a room or floor anchor the person is already inside, so the button becomes "Floor plan" (`#/floorplan?b&f`) instead, or is left out when that floor has no plan.
+  - Preview's back link goes to search, not back to facilities (preview's own behaviour, not changed here). Search's TODO about facilities ignoring `?b=` is now done; remove it on a search branch.
+  - Only facilities in the anchor's building are ranked. Cross-building ranking would need entrance coordinates, which live in the preview view (`places.js`), and views can't import each other.
 
 - **2026-11-21: "I don't know where I am" recovery (branch `view/recover`, owner Abdullah).** Answers the A2 severity-3 finding.
   - Recover menu leads with "I don't know where I am". Users place themselves by tapping a photo card of what they can see (every labelled item on the floor plans: lobby, elevators, stairs, entrances, room plates), filtered by floor, or via "I'm not sure": which floor number is on the nearest sign, or type a door-plate number. "Can't see any sign" says to walk to an elevator/stairwell or ask at the lobby desk.
