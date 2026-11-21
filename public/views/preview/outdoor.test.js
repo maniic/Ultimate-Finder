@@ -204,3 +204,25 @@ test('chooseDestination falls back to the nearest suitable entrance when there i
   assert.equal(chooseDestination(ENTRANCES, { routeEntranceId: 'Z', from: nearB, stepFree: true }).id, 'A');
   assert.equal(chooseDestination([], {}), null);
 });
+
+// ---- step-free explanation ----
+import { stepFreeInfo } from './outdoor.js';
+
+test('stepFreeInfo says which entrance is used and which stair entrances are avoided', () => {
+  const info = stepFreeInfo(ENTRANCES, ENTRANCES[0]);
+  assert.equal(info.uses.id, 'A');
+  assert.deepEqual(info.avoids.map((e) => e.id), ['B']);
+  assert.equal(info.unavailable, false);
+});
+
+test('stepFreeInfo flags a building whose chosen entrance is not step-free', () => {
+  const stairs = ENTRANCES.map((e) => ({ ...e, stepFree: false }));
+  const info = stepFreeInfo(stairs, stairs[0]);
+  assert.equal(info.unavailable, true);
+  assert.deepEqual(info.avoids.map((e) => e.id), ['B']);
+});
+
+test('stepFreeInfo copes with nothing chosen', () => {
+  assert.deepEqual(stepFreeInfo(ENTRANCES, null), { uses: null, avoids: [ENTRANCES[1]], unavailable: true });
+  assert.deepEqual(stepFreeInfo(undefined, null), { uses: null, avoids: [], unavailable: true });
+});

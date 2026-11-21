@@ -129,3 +129,10 @@ export function chooseDestination(entrances, { routeEntranceId, stepFree = false
   const fixed = routeEntranceId && (entrances || []).find((e) => e.id === routeEntranceId && isValidLatLng(e));
   return fixed || pickEntrance(entrances, { stepFree, from });
 }
+
+// What the step-free choice means at this building: the entrance used, the
+// stair entrances it avoids, and whether no step-free entrance is on record.
+export function stepFreeInfo(entrances, chosen) {
+  const avoids = (entrances || []).filter((e) => !e.stepFree && e.id !== chosen?.id);
+  return { uses: chosen || null, avoids, unavailable: !chosen?.stepFree };
+}

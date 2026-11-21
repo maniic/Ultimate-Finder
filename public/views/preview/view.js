@@ -1,6 +1,7 @@
 // Owner: Abdullah
 // VIEW: Route preview. Walking directions to the building entrance (live
-// Google map), plus best entrance, walk time, floor and the step-free switch.
+// Google map), plus best entrance, walk time, floor and the route type
+// (Standard / Step-free), with a box saying what each choice uses and avoids.
 // Prototype Fig. 2c.
 // In:  #/preview?b=OI&r=10-210[&stepfree=1]   a room
 //      #/preview?b=OI&fac=f1                  a facility (same map)
@@ -13,14 +14,12 @@
 // the destination comes from the b/r/fac params.
 //
 // TODO (from the evaluation):
-//  - HE1/HE4 + think-aloud finding 2: make the step-free option's meaning and
-//    selected state obvious; say which entrance and route features it uses.
 //  - Verify entrance coordinates in places.js on site.
 
 import { h, append, backLink, minutes } from '/js/ui.js';
 import { getBuilding, getRoom, getRoute, getEntrance, ENTRANCES, FACILITIES, ROOMS, facilityTypeName } from '/js/data.js';
 import { outdoorMap } from './map.js';
-import { chooseDestination, entrancesFor, searchUrl } from './outdoor.js';
+import { chooseDestination, entrancesFor, searchUrl, stepFreeInfo } from './outdoor.js';
 import { PLACES } from './places.js';
 
 export const title = 'Route preview';
@@ -98,26 +97,66 @@ function fill(body, building, params, nav) {
   const shown = routeEntrance || dest;
   const entranceDd = h('dd', null, shown ? shown.name : '–');
   const entranceNote = h('p', { class: 'small' });
-  const stepFreeText = h('span', { class: 'muted small block' });
+  // Step-free explanation (A2 finding: people couldn't tell what it does or
+  // whether it was on). Rebuilt whenever the chosen entrance changes.
+  const stepFreeBox = h('div', { class: `card stepfree-info${stepFree ? ' is-on' : ''}`, 'aria-live': 'polite' });
+  const icon = () => h('span', { 'aria-hidden': 'true' }, '♿ ');
+  let explainedFor; // entrance id the box was last built for
   function showEntrance(e) {
     if (!e) return;
     entranceDd.textContent = e.name;
     const bits = [e.detail, e.note].filter(Boolean);
     entranceNote.textContent = bits.length ? `${bits.join('. ')}.` : '';
     entranceNote.hidden = !bits.length;
-    stepFreeText.textContent = stepFree
-      ? `On: avoids all stairs. Uses ${e.name}${e.note ? ` (${e.note.toLowerCase()})` : ''}.`
-      : 'Avoids stairs. Uses ramps and elevators only.';
+    explainStepFree(e);
   }
-  if (shown) showEntrance(shown); else stepFreeText.textContent = 'Avoids stairs. Uses ramps and elevators only.';
-  const toggle = h('input', {
-    type: 'checkbox', role: 'switch', id: 'stepfree', checked: stepFree,
-    onchange: (e) => nav.go('preview', keep({ stepfree: e.target.checked ? '1' : undefined }), { keepFocus: 'stepfree' }),
-  });
+  function explainStepFree(e) {
+    // onRoute fires more than once per origin; only rebuild (and so only
+    // re-announce the live region) when the entrance actually changes.
+    const id = e ? e.id : null;
+    if (explainedFor !== undefined && explainedFor === id) return;
+    explainedFor = id;
+    const info = stepFreeInfo(entrances, e);
+    const named = (x) => `${x.name}${x.note ? `, ${x.note.toLowerCase()}` : ''}`;
+    if (stepFree) {
+      stepFreeBox.replaceChildren();
+      append(stepFreeBox,
+        h('strong', null, icon(), 'Step-free route is on'),
+        info.unavailable
+          ? h('p', { class: 'small warn' }, `We have no step-free entrance on record for ${building.name}. Check with the building before you go.`)
+          : null,
+        h('ul', { class: 'small' },
+          info.uses ? h('li', null, `Uses ${named(info.uses)}.`) : null,
+          info.avoids.map((a) => h('li', null, `Avoids ${named(a)}.`)),
+          route ? h('li', null, 'Inside: elevators and ramps only, no stairs.') : null));
+    } else {
+      // Only blame the entrance we're actually going to; others are context.
+      const here = info.uses && !info.uses.stepFree ? info.uses : null;
+      const others = info.avoids.filter((a) => a !== here);
+      let text;
+      if (here) text = `It may use stairs: ${named(here)}. Choose Step-free to avoid all stairs.`;
+      else if (others.length) text = `${info.uses ? `${info.uses.name} is step-free, but stairs inside are possible. ` : ''}Other entrances have stairs: ${others.map(named).join('; ')}. Choose Step-free to use elevators and ramps only.`;
+      else text = 'It may use stairs inside. Choose Step-free to use elevators and ramps only.';
+      stepFreeBox.replaceChildren();
+      append(stepFreeBox,
+        h('strong', null, 'Standard route'),
+        h('p', { class: 'small' }, text));
+    }
+  }
+  if (shown) showEntrance(shown); else explainStepFree(null);
+
+  const go = (on) => nav.go('preview', keep({ stepfree: on ? '1' : undefined }), { keepFocus: on ? 'stepfree' : 'route-standard' });
+  const routeType = h('div', { class: 'route-type', role: 'group', 'aria-label': 'Route type' },
+    h('button', { type: 'button', id: 'route-standard', class: 'chip', 'aria-pressed': stepFree ? 'false' : 'true', onclick: () => stepFree && go(false) }, 'Standard'),
+    h('button', { type: 'button', id: 'stepfree', class: 'chip', 'aria-pressed': stepFree ? 'true' : 'false', onclick: () => !stepFree && go(true) }, icon(), 'Step-free'));
 
   append(body,
-    backLink(nav.href('search', { b: building.code, r: room ? room.number : undefined }), room ? 'Change room' : 'Back'),
+    facility
+      ? backLink(nav.href('facilities', { type: facility.type, b: building.code, id: facility.id, stepfree: stepFree ? '1' : undefined }), 'Back to facilities')
+      : backLink(nav.href('search', { b: building.code, r: room ? room.number : undefined }), room ? 'Change room' : 'Back'),
     h('div', null, h('h1', null, heading), sub ? h('p', { class: 'muted' }, sub) : null),
+    routeType,
+    stepFreeBox,
     dest
       ? outdoorMap({ entrances, routeEntranceId: route?.entrance, stepFree, sim, arrival,
         onRoute: (s, e) => { walkDd.textContent = s ? minutes(s.minutes) : '–'; showEntrance(e); } })
@@ -126,7 +165,7 @@ function fill(body, building, params, nav) {
         searchUrl(building.name) ? h('a', { class: 'btn', target: '_blank', rel: 'noopener', href: searchUrl(building.name) }, 'Find it in Google Maps') : null),
     dest ? h('div', { class: 'card summary' },
       h('dl', { class: 'facts' },
-        h('div', null, h('dt', null, 'Walk'), walkDd),
+        h('div', null, h('dt', null, 'Walk'), walkDd, stepFree ? h('dd', null, h('span', { class: 'badge-stepfree' }, icon(), 'Step-free')) : null),
         h('div', null, h('dt', null, 'Entrance'), entranceDd),
         h('div', null, h('dt', null, 'Floor'), h('dd', null, room ? String(room.floor) : facility ? String(facility.floor) : '–'))),
       entranceNote,
@@ -134,11 +173,6 @@ function fill(body, building, params, nav) {
     dest && (!hasIndoorData || (room && !route)) ? h('p', { class: 'notice small' }, room
       ? `Indoor directions to ${building.code} ${room.number} aren't ready yet, so this gets you to the entrance.`
       : `Indoor directions for ${building.name} aren't ready yet, so this gets you to the entrance.`) : null,
-    h('label', { class: 'card switch-row', for: 'stepfree' },
-      toggle,
-      h('span', null,
-        h('strong', null, 'Step-free route (accessibility)'),
-        stepFreeText)),
     route ? h('div', { class: 'btn-row' },
       h('a', { class: 'btn', href: nav.href('floorplan', { b: building.code, f: room.floor, r: room.number, stepfree: stepFree ? '1' : undefined }) }, 'Show floor plan'),
       h('a', { class: 'btn btn-primary', href: nav.href('navigate', { b: building.code, r: room.number, stepfree: stepFree ? '1' : undefined, step: 1 }) }, 'Start route')) : null,
