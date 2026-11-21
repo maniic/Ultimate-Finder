@@ -72,8 +72,12 @@ test("I'm not sure: type the door plate you can see and rejoin from there", asyn
   await page.getByLabel(/number on the nearest door plate/i).fill('10 212');
   await page.getByRole('button', { name: 'Find it' }).click();
   await page.getByRole('heading', { name: "You're at Room 10-212" }).waitFor();
-  await page.getByRole('link', { name: 'Start directions from here' }).click();
-  await page.getByRole('heading', { name: 'Step 5 of 5' }).waitFor();
+  // The room is right here: guide them to it instead of a premature "You've arrived".
+  await page.getByText(/10-210 is close by on this floor/).waitFor();
+  assert.equal(await page.getByText(/on your right/).count(), 0);
+  assert.equal(await page.getByRole('link', { name: 'Start directions from here' }).count(), 0);
+  await page.getByRole('link', { name: 'I found 10-210: finish route' }).click();
+  await page.waitForURL(/#\/search/);
   assert.deepEqual(errors, []);
   await context.close();
 });
@@ -96,6 +100,13 @@ test("I'm not sure: answering the floor question narrows the photos to that floo
   const floors = await page.locator('.choice .muted').allTextContents();
   assert.ok(floors.length > 0);
   assert.ok(floors.every((f) => f === 'Floor 10'), floors.join());
+  await context.close();
+});
+
+test('a floor we have no plan for gets a way back, not a dead end', async () => {
+  const { page, context } = await open('#/recover?b=OI&r=10-210&step=2&stage=unsure');
+  await page.getByRole('link', { name: 'Another floor' }).click();
+  await page.getByText(/take the elevator to floor 1/i).waitFor();
   await context.close();
 });
 
@@ -137,6 +148,9 @@ test('standing at the destination room says you are there', async () => {
 test('junk params: unknown spot, unknown room, bad floor', async () => {
   const a = await open('#/recover?b=OI&r=10-210&stage=here&spot=constructor');
   await a.page.getByText("We don't know that place").waitFor();
+  await a.page.goto(`${base}/#/recover?b=OI&r=10-200&step=1&stage=here&spot=1:lobby`);
+  await a.page.getByText(/no indoor directions to 10-200 yet/i).waitFor();
+  assert.ok(await a.page.getByRole('link', { name: /back/i }).first().isVisible());
   assert.deepEqual(a.errors, []);
   await a.context.close();
   const b = await open('#/recover?b=OI&r=99-999&stage=where');

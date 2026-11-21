@@ -75,6 +75,8 @@ test('rejoin: by the elevators on floor 10, continue with "exit and turn right"'
 test('rejoin: past the turn (by the washroom), go straight to the arrival step', () => {
   const r = rejoin(OI, '10-210', spot('10:wr'), 'standard');
   assert.equal(r.step, 5);
+  assert.equal(r.nearby, true, 'flags that the next step is the destination itself');
+  assert.equal(rejoin(OI, '10-210', spot('10:elev-ab'), 'standard').nearby, false);
 });
 
 test('rejoin: elevator blocked and lost in the lobby, head to Elevator C first', () => {

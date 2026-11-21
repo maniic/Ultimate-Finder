@@ -100,5 +100,7 @@ export function rejoin(building, roomNumber, spot, variant) {
 
   const join = route.steps[step - 1];
   const path = [spot.at, ...route.steps.slice(step - 1).filter((s) => s.floor === spot.floor).map((s) => s.at)];
-  return { variant, step, floor: spot.floor, toward: join.see, text: join.text, path };
+  // `nearby`: the next step is the destination itself. Its text ("on your
+  // right") assumes the original approach, so the view guides them instead.
+  return { variant, step, floor: spot.floor, toward: join.see, text: join.text, path, nearby: Boolean(join.arrival) };
 }

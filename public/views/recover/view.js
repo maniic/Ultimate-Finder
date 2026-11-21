@@ -14,7 +14,7 @@
 // The rejoin logic is in reroute.js (unit-tested).
 
 import { h, append, photo, backLink } from '/js/ui.js';
-import { getBuilding, getRoom, FLOORS } from '/js/data.js';
+import { getBuilding, getRoom, getRoute, FLOORS } from '/js/data.js';
 import { drawPlan } from '/js/floorplan.js';
 import { spotsFor, findSpot, findRoomSign, pickVariant, rejoin } from './reroute.js';
 
@@ -79,7 +79,7 @@ function renderWhere(root, params, { building, why, here, floors, routeParams, n
 // "I'm not sure": one easy question at a time.
 function renderUnsure(root, params, { building, here, floors }) {
   const msg = h('p', { class: 'notice small', role: 'alert', hidden: true });
-  const input = h('input', { type: 'text', id: 'room-sign', name: 'room', inputmode: 'numeric', autocomplete: 'off', placeholder: 'e.g. 10-212' });
+  const input = h('input', { type: 'text', id: 'room-sign', name: 'room', autocomplete: 'off', placeholder: 'e.g. 10-212' });
   const form = h('form', {
     class: 'room-sign',
     onsubmit: (e) => {
@@ -101,9 +101,16 @@ function renderUnsure(root, params, { building, here, floors }) {
     h('h1', null, "Let's work it out"),
     h('h2', { class: 'question' }, 'What floor number is on the nearest sign?'),
     h('p', { class: 'muted small' }, 'Look by the elevators, the stairwell door, or the first digits of a room number.'),
-    h('div', { class: 'floor-pick' }, floors.map((f) =>
-      h('a', { class: 'btn', href: here({ stage: 'where', floor: f }) }, `Floor ${f}`))),
+    h('div', { class: 'floor-pick' },
+      floors.map((f) => h('a', { class: 'btn', href: here({ stage: 'where', floor: f }) }, `Floor ${f}`)),
+      h('a', { class: 'btn', href: here({ stage: 'unsure', nosign: 'floor' }) }, 'Another floor')),
     form,
+    params.nosign === 'floor'
+      ? h('div', { class: 'notice' },
+        h('strong', null, 'On another floor?'),
+        h('p', null, `We only have plans for floor ${floors.join(' and ')} so far. Take the elevator to floor 1 and pick the main lobby, or ask at the lobby desk.`),
+        h('a', { class: 'btn', href: here({ stage: 'where', floor: floors[0] }) }, `I'm on floor ${floors[0]} now`))
+      : null,
     params.nosign === '1'
       ? h('div', { class: 'notice' },
         h('strong', null, "Can't see any sign?"),
@@ -129,8 +136,9 @@ function renderHere(root, params, { building, room, why, here, routeParams, nav 
   });
   const notRight = h('a', { class: 'btn', href: here({ stage: 'where', floor: spot.floor }) }, "That's not where I am");
 
+  const back = backLink(here({ stage: 'where', floor: spot.floor }), 'Back to photos');
   if (r?.arrived) {
-    append(root,
+    append(root, back,
       h('h1', null, "You're already there"),
       plan,
       h('p', null, `${building.code} ${room.number} is the room you're standing at. Check the room plate.`),
@@ -139,16 +147,33 @@ function renderHere(root, params, { building, room, why, here, routeParams, nav 
     return;
   }
   if (!r) {
-    append(root,
+    const noRoute = !getRoute(building.code, room.number, variant);
+    append(root, back,
       h('h1', null, `You're at ${spot.name}`),
       plan,
-      h('p', { class: 'notice' }, `We don't have directions from floor ${spot.floor} yet. Take the nearest elevator to floor 1 and ask at the lobby desk.`),
+      h('p', { class: 'notice' }, noRoute
+        ? `We have no indoor directions to ${room.number} yet. Ask at the lobby desk on floor 1.`
+        : `We don't have directions from floor ${spot.floor} yet. Take the nearest elevator to floor 1 and ask at the lobby desk.`),
+      notRight);
+    return;
+  }
+  // The room is a few steps away: point them at it here. The route's last
+  // step says "on your right", which is only true from the original approach.
+  if (r.nearby) {
+    append(root, back,
+      h('p', { class: 'small muted' }, `Floor ${spot.floor} · ${building.code}`),
+      h('h1', null, `You're at ${spot.name}`),
+      plan,
+      h('p', { class: 'muted small' }, 'Red dot: you. Line: the way to your room.'),
+      h('div', { class: 'card rejoin' },
+        h('strong', null, `${room.number} is close by on this floor.`),
+        h('span', { class: 'small' }, `Follow the line on the plan and look for: ${r.toward}.`)),
+      h('a', { class: 'btn btn-primary', href: nav.href('search') }, `I found ${room.number}: finish route`),
       notRight);
     return;
   }
 
-  append(root,
-    backLink(here({ stage: 'where', floor: spot.floor }), 'Back to photos'),
+  append(root, back,
     h('p', { class: 'small muted' }, `Floor ${spot.floor} · ${building.code}`),
     h('h1', null, `You're at ${spot.name}`),
     plan,
