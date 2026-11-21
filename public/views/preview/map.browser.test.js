@@ -324,3 +324,67 @@ test('a known room without indoor steps says indoor directions are not ready', a
   assert.equal(await page.getByRole('link', { name: /start route/i }).count(), 0);
   await context.close();
 });
+
+// ---- step-free clarity (A2: people couldn't tell what it does or if it was on) ----
+
+test('route type is a two-option control near the top with one option selected', async () => {
+  const { page, context, errors } = await open('#/preview?b=OI&r=10-210');
+  const group = page.getByRole('group', { name: /route type/i });
+  await group.waitFor();
+  const standard = group.getByRole('button', { name: /standard/i });
+  const stepFree = group.getByRole('button', { name: /step-free/i });
+  assert.equal(await standard.getAttribute('aria-pressed'), 'true');
+  assert.equal(await stepFree.getAttribute('aria-pressed'), 'false');
+  // It sits above the map, not at the bottom of the page.
+  const groupY = (await group.boundingBox()).y;
+  const mapY = (await page.locator('.outdoor').boundingBox()).y;
+  assert.ok(groupY < mapY, 'route type control is above the map');
+  await stepFree.click();
+  await page.waitForFunction(() => location.hash.includes('stepfree=1'));
+  await page.locator('#stepfree[aria-pressed="true"]').waitFor(); // re-rendered
+  assert.equal(await page.locator('#route-standard').getAttribute('aria-pressed'), 'false');
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'stepfree');
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test('step-free on: says it is on, what it uses and what it avoids', async () => {
+  const { page, context } = await open('#/preview?b=OI&r=10-210&stepfree=1');
+  const box = page.locator('.stepfree-info');
+  await box.waitFor();
+  const text = await box.innerText();
+  assert.match(text, /step-free route is on/i);
+  assert.match(text, /uses entrance a/i);
+  assert.match(text, /entrance a, ramp, automatic door/i);
+  assert.match(text, /avoids entrance b/i);
+  assert.match(text, /entrance b, stairs \(6 steps\)/i);
+  assert.match(text, /elevators/i);
+  assert.doesNotMatch(text, /null|undefined|\(\(|\)\)/, 'no stray null or doubled brackets');
+  assert.ok(await page.locator('.summary .badge-stepfree').isVisible(), 'summary shows a step-free badge');
+  await context.close();
+});
+
+test('step-free off: says the standard route may use stairs and how to avoid them', async () => {
+  const { page, context } = await open('#/preview?b=OI&r=10-210');
+  const box = page.locator('.stepfree-info');
+  await box.waitFor();
+  const text = await box.innerText();
+  assert.match(text, /may use stairs/i);
+  assert.match(text, /entrance b/i);
+  assert.match(text, /choose step-free/i);
+  assert.doesNotMatch(text, /null|undefined|\(\(|\)\)/);
+  assert.equal(await page.locator('.summary .badge-stepfree').count(), 0);
+  await context.close();
+});
+
+test('opened from Facilities, the back link returns to Facilities', async () => {
+  const { page, context } = await open('#/preview?b=OI&fac=f1&stepfree=1');
+  const back = page.locator('.back-link').first();
+  await back.waitFor();
+  const href = await back.getAttribute('href');
+  assert.match(href, /^#\/facilities\?/);
+  assert.match(href, /type=bottle-filler/);
+  assert.match(href, /b=OI/);
+  assert.match(href, /stepfree=1/);
+  await context.close();
+});
