@@ -19,7 +19,7 @@ import { h, append, photo, backLink, minutes } from '/js/ui.js';
 import { FACILITY_TYPES, FLOORS, facilityTypeName } from '/js/data.js';
 import { drawPlan } from '/js/floorplan.js';
 import { reportSection } from './reports.js';
-import { resolveAnchor, anchorParams, rankFacilities, anchorChoices, anchorBuildings } from './nearest.js';
+import { isInside, resolveAnchor, anchorParams, rankFacilities, anchorChoices, anchorBuildings } from './nearest.js';
 
 export const title = 'Facilities';
 
@@ -55,8 +55,9 @@ export function render(root, params, nav) {
     h('div', { class: 'grow' },
       h('span', { class: 'muted small' }, 'Near'),
       h('strong', { class: 'block' }, anchor.label),
-      h('span', { class: 'muted small block' }, [shortName(anchor.buildingName), anchor.kind === 'entrance' ? anchor.detail : null].filter(Boolean).join(' · '))),
-    h('a', { class: 'btn btn-small', href: link({ pick: '1', id: undefined }), 'aria-label': `Change where you are (now ${anchor.label})` }, 'Change'));
+      anchor.kind === 'building' ? null
+        : h('span', { class: 'muted small block' }, [shortName(anchor.buildingName), anchor.kind === 'entrance' ? anchor.detail : null].filter(Boolean).join(' · '))),
+    h('a', { class: 'btn btn-small', href: link({ pick: '1', id: params.id }), 'aria-label': `Change where you are (now ${anchor.label})` }, 'Change'));
 
   if (!params.type) {
     append(root,
@@ -72,10 +73,21 @@ export function render(root, params, nav) {
   const list = rankFacilities(params.type, anchor);
   const typeName = facilityTypeName(params.type);
   const lower = typeName.toLowerCase();
-  const walkThere = (f, cls = 'btn') => h('a', {
-    class: cls, href: nav.href('preview', { b: f.building, fac: f.id, stepfree }),
-    'aria-label': `Walk there: map to ${lower}, floor ${f.floor}`,
-  }, 'Walk there');
+  const inside = isInside(anchor);
+  const hasPlan = (f) => own(FLOORS, f.building) && own(FLOORS[f.building], f.floor);
+  const planHref = (f) => nav.href('floorplan', { b: f.building, f: f.floor });
+  // Outside (an entrance): the walking map to the building, which then goes
+  // on to the floor plan. Already inside (a room or floor): straight to the
+  // floor plan, since an outdoor map is no use there.
+  const walkThere = (f, cls = 'btn') => {
+    if (!inside) {
+      return h('a', { class: cls, href: nav.href('preview', { b: f.building, fac: f.id, stepfree }),
+        'aria-label': `Walk there: map to ${lower}, floor ${f.floor}` }, 'Walk there');
+    }
+    return hasPlan(f)
+      ? h('a', { class: cls, href: planHref(f), 'aria-label': `Floor plan: ${lower}, floor ${f.floor}` }, 'Floor plan')
+      : null;
+  };
 
   if (params.id) {
     const f = list.find((x) => x.id === params.id);
@@ -84,6 +96,7 @@ export function render(root, params, nav) {
         backLink(link({ id: undefined }), `All ${lower}s`),
         h('h1', null, typeName),
         photo(`${typeName}: ${f.near}`),
+        where,
         h('div', { class: 'card' },
           h('strong', null, `${shortName(anchor.buildingName)} · ${floorText(f, anchor)}`),
           h('p', null, f.near),
@@ -92,11 +105,11 @@ export function render(root, params, nav) {
             ? `We can't estimate the walk from ${anchor.label} yet.`
             : `About ${minutes(f.walkMin)} walk from ${anchor.label}.`)),
         h('div', { class: 'btn-row' },
-          walkThere(f, 'btn btn-primary'),
-          own(FLOORS, f.building) && own(FLOORS[f.building], f.floor)
-            ? h('a', { class: 'btn', href: nav.href('floorplan', { b: f.building, f: f.floor }) }, 'Show on floor plan')
+          inside ? null : walkThere(f, 'btn btn-primary'),
+          hasPlan(f)
+            ? h('a', { class: inside ? 'btn btn-primary' : 'btn', href: planHref(f) }, 'Show on floor plan')
             : h('button', { class: 'btn', disabled: true }, 'No floor plan yet')),
-        h('p', { class: 'muted small' }, 'Walk there opens the walking map to the building, then the floor plan inside.'),
+        inside ? null : h('p', { class: 'muted small' }, 'Walk there opens the walking map to the building, then the floor plan inside.'),
         reportSection(f.id),
       );
       return;
@@ -115,7 +128,7 @@ export function render(root, params, nav) {
     where,
     nearestNotWorking ? h('p', { class: 'notice small' }, working
       ? `The nearest one is ${STATUS[nearest.status].toLowerCase()}. The nearest working one is on floor ${working.floor}${working.walkMin == null ? '' : `, ${minutes(working.walkMin)} walk`}.`
-      : `None of these is confirmed working right now.`) : null,
+      : list.length === 1 ? "It isn't confirmed working right now." : 'None of these is confirmed working right now.') : null,
     planItems
       ? drawPlan(planItems, {
         mini: true,
@@ -124,6 +137,11 @@ export function render(root, params, nav) {
         marker: anchor.floor === nearest.floor ? anchor.at : undefined,
       })
       : null,
+    planItems ? h('p', { class: 'muted small plan-key' },
+      anchor.floor === nearest.floor && anchor.at ? h('span', { class: 'key key-you', 'aria-hidden': 'true' }) : null,
+      anchor.floor === nearest.floor && anchor.at ? 'You · ' : null,
+      h('span', { class: 'key key-fac', 'aria-hidden': 'true' }),
+      `${typeName}s on floor ${nearest.floor} (red: out of order, amber: not confirmed)`) : null,
     list.length
       ? h('ul', { class: 'results' }, list.map((f, i) =>
         h('li', { class: 'card result' },
@@ -134,7 +152,7 @@ export function render(root, params, nav) {
             statusLine(f)),
           walkThere(f, 'btn btn-small walk'))))
       : h('p', null, `No ${lower}s in ${shortName(anchor.buildingName)} in our data yet.`,
-        ' ', h('a', { href: link({ pick: '1' }) }, 'Try another building')),
+        ' ', h('a', { class: 'inline-link', href: link({ pick: '1' }) }, 'Try another building')),
   );
 }
 
@@ -162,7 +180,7 @@ function anchorError(root, anchor, params, nav, stepfree) {
 // "Where are you?" Entrances, floors and rooms in this building, plus other
 // buildings. Every choice is a link that sets the anchor and keeps the type.
 function picker(root, anchor, params, nav, stepfree) {
-  const go = (p) => nav.href('facilities', { b: anchor.b, stepfree, type: params.type, ...p });
+  const go = (p) => nav.href('facilities', { b: anchor.b, stepfree, type: params.type, id: params.id, ...p });
   const c = anchorChoices(anchor.b);
   const current = anchorParams({ ...anchor, isDefault: false });
   const isCurrent = (p) => Object.entries(p).every(([k, v]) => current[k] === v) && Object.keys(p).length;

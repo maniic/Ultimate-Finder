@@ -57,10 +57,10 @@ test('from search (no b): anchored at the first entrance, nearest bottle filler 
   assert.ok(await page.locator('.anchor').getByText('Entrance A').isVisible());
   const first = page.locator('.results li').first();
   assert.match(await first.textContent(), /Floor 1 \(your floor\).*1 min walk.*Nearest.*Main lobby/);
-  assert.match(await page.locator('.results li').nth(1).textContent(), /Floor 10 · 9 floors up.*3 min walk/);
+  assert.match(await page.locator('.results li').nth(1).textContent(), /Floor 5 · 4 floors up.*8 min walk/);
   assert.equal(await page.locator('svg.plan .plan-marker').count(), 1, 'you-are-here on the floor-1 mini map');
   // The nearest one is out of order, so point to the nearest working one.
-  assert.ok(await page.getByText('The nearest one is out of order. The nearest working one is on floor 10, 3 min walk.').isVisible());
+  assert.ok(await page.getByText('The nearest one is out of order. The nearest working one is on floor 10, 9 min walk.').isVisible());
   assert.deepEqual(errors, []);
   await context.close();
 });
@@ -123,4 +123,29 @@ test('unknown building, room or floor: says so and offers the chooser', async ()
     assert.deepEqual(errors, [], path);
     await context.close();
   }
+});
+
+test('already inside (a room): no outdoor map, the buttons go to the floor plan', async () => {
+  const { page, context, errors } = await open('#/facilities?b=OI&r=10-210&type=bottle-filler');
+  await page.getByRole('heading', { name: 'Nearest bottle filler' }).waitFor();
+  const items = page.locator('.results li');
+  assert.equal(await items.first().getByRole('link', { name: /Floor plan/ }).getAttribute('href'), '#/floorplan?b=OI&f=10');
+  assert.equal(await page.getByRole('link', { name: /Walk there/ }).count(), 0);
+  assert.equal(await items.nth(1).getByRole('link', { name: /Floor plan/ }).count(), 0, 'floor 5 has no plan yet');
+  // Detail: keeps the "Near" card, and Change comes back to this facility.
+  await items.first().locator('.result-main').click();
+  await page.getByRole('heading', { name: 'Bottle filler', exact: true }).waitFor();
+  assert.equal(await page.getByRole('link', { name: 'Show on floor plan' }).getAttribute('href'), '#/floorplan?b=OI&f=10');
+  await page.getByRole('link', { name: /Change where you are/ }).click();
+  await page.waitForURL(/pick=1/);
+  await page.getByRole('link', { name: /Entrance B/ }).click();
+  await page.getByRole('heading', { name: 'Bottle filler', exact: true }).waitFor();
+  const p = hashParams(page);
+  assert.equal(p.get('id'), 'f1');
+  assert.equal(p.get('e'), 'B');
+  assert.equal(p.get('r'), null);
+  assert.ok(await page.getByText('About 9 min walk from Entrance B.').isVisible());
+  assert.equal(await page.getByRole('link', { name: /Walk there/ }).getAttribute('href'), '#/preview?b=OI&fac=f1');
+  assert.deepEqual(errors, []);
+  await context.close();
 });

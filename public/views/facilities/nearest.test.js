@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { FACILITIES } from '../../js/data.js';
-import { resolveAnchor, anchorParams, walkMinutes, rankFacilities, anchorChoices, anchorBuildings, facilityBuildings } from './nearest.js';
+import { isInside, resolveAnchor, anchorParams, walkMinutes, rankFacilities, anchorChoices, anchorBuildings, facilityBuildings } from './nearest.js';
 
 const fac = (id) => FACILITIES.find((f) => f.id === id);
 const ids = (list) => list.map((f) => f.id);
@@ -53,7 +53,7 @@ test('bad params give an error instead of a guess', () => {
   assert.equal(resolveAnchor({ b: 'OI', r: '99-999' }).error, 'room');
   assert.equal(resolveAnchor({ b: 'OI', r: 'constructor' }).error, 'room');
   assert.equal(resolveAnchor({ b: 'OI', e: 'Z' }).error, 'entrance');
-  for (const f of ['0', '13', '2.5', 'x', '-1']) assert.equal(resolveAnchor({ b: 'OI', f }).error, 'floor', f);
+  for (const f of ['0', '13', '2.5', 'x', '-1', '1e1', ' 5', '0x5']) assert.equal(resolveAnchor({ b: 'OI', f }).error, 'floor', f);
   assert.deepEqual(rankFacilities('bottle-filler', resolveAnchor({ b: 'ZZ' })), []);
   assert.deepEqual(anchorParams(resolveAnchor({ b: 'ZZ' })), {});
 });
@@ -68,18 +68,20 @@ test('a known building without facility data anchors fine but ranks nothing', ()
 test('walkMinutes: same floor is a short walk, other floors add the elevator, other buildings are unknown', () => {
   const lobby = resolveAnchor({ b: 'OI' });
   assert.equal(walkMinutes(lobby, fac('f2')), 1, 'lobby bottle filler, same floor');
-  assert.equal(walkMinutes(lobby, fac('f1')), 3, 'floor 10, via Elevators A/B');
+  assert.equal(walkMinutes(lobby, fac('f1')), 9, 'floor 10, via Elevators A/B');
+  assert.equal(walkMinutes(lobby, { building: 'OI', floor: 10, at: [70, 44] }), 9,
+    'Entrance A to 10-210 matches the mock route times (ROUTES: 9 to 11 min)');
   const room = resolveAnchor({ b: 'OI', r: '10-210' });
   assert.equal(walkMinutes(room, fac('f1')), 1);
-  assert.equal(walkMinutes(room, fac('f2')), 4);
+  assert.equal(walkMinutes(room, fac('f2')), 9);
   assert.equal(walkMinutes(room, { ...fac('f1'), building: 'BA' }), null);
   assert.equal(walkMinutes(room, { ...fac('f1'), at: undefined }), null);
   for (const f of FACILITIES) assert.ok(walkMinutes(lobby, f) >= 1, f.id);
 });
 
 test('rankFacilities: nearest first from the anchor, so the order changes with where you are', () => {
-  assert.deepEqual(ids(rankFacilities('bottle-filler', resolveAnchor({ b: 'OI' }))), ['f2', 'f1', 'f3'],
-    'from the entrance: lobby first; f1 and f3 tie at 3 min and the working one wins');
+  assert.deepEqual(ids(rankFacilities('bottle-filler', resolveAnchor({ b: 'OI' }))), ['f2', 'f3', 'f1'],
+    'from the entrance: lobby first, then by the unrounded estimate');
   assert.deepEqual(ids(rankFacilities('bottle-filler', resolveAnchor({ b: 'OI', r: '10-210' }))), ['f1', 'f3', 'f2'],
     'from 10-210: the floor-10 filler first');
   const ranked = rankFacilities('bottle-filler', resolveAnchor({ b: 'OI' }));
@@ -103,4 +105,11 @@ test('anchorBuildings puts buildings with facility data first', () => {
   assert.equal(list[0].code, 'OI');
   assert.equal(list[0].hasFacilities, true);
   assert.ok(list.slice(1).every((b) => !b.hasFacilities));
+});
+
+test('isInside: rooms and floors are inside the building, entrances are not', () => {
+  assert.equal(isInside(resolveAnchor({ b: 'OI', r: '10-210' })), true);
+  assert.equal(isInside(resolveAnchor({ b: 'OI', f: '5' })), true);
+  assert.equal(isInside(resolveAnchor({ b: 'OI', e: 'A' })), false);
+  assert.equal(isInside(resolveAnchor({ b: 'OI' })), false);
 });

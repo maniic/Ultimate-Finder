@@ -10,17 +10,20 @@
 // With only b, it's the building's first entrance (first step-free one when
 // stepfree=1). With no b, it's the first building that has facility data.
 //
-// Walk times are ESTIMATES on the abstract floor-plan grid (about 1 m per
-// unit), walking the corridors (x + y, not a straight line). Changing floors
-// goes through whichever elevator makes the trip shortest, plus a wait and
-// ride time. Floors without a plan are assumed to have the elevators in the
-// same place as the floors that do. Not verified on site.
+// Walk times are ESTIMATES on the abstract floor-plan grid: x + y distance
+// (a rough stand-in for walking the corridors, not a real path), at a slow
+// indoor pace that allows for doors and turns. Changing floors goes through
+// whichever elevator makes the trip shortest, plus a wait and ride time.
+// The constants are tuned so Entrance A to 10-210 comes out at 9 min, in line
+// with the mock route times in data.js (ROUTES: 9 to 11 min). Floors without
+// a plan are assumed to have the elevators where the floors with one do.
+// Not verified on site.
 
 import { BUILDINGS, ENTRANCES, FLOORS, ROOMS, FACILITIES, getBuilding } from '../../js/data.js'; // relative so node --test can load it too
 
-export const WALK_M_PER_MIN = 70;
-export const ELEVATOR_WAIT_MIN = 1;
-export const ELEVATOR_MIN_PER_FLOOR = 0.1;
+export const GRID_UNITS_PER_MIN = 30;
+export const ELEVATOR_WAIT_MIN = 4;
+export const ELEVATOR_MIN_PER_FLOOR = 0.2;
 
 const code = (b) => String(b || '').toUpperCase();
 const own = (obj, key) => !!obj && Object.hasOwn(obj, key);
@@ -81,7 +84,7 @@ export function resolveAnchor(params = {}) {
   }
 
   if (params.f !== undefined && params.f !== '') {
-    const floor = Number(params.f);
+    const floor = /^\d+$/.test(String(params.f)) ? Number(params.f) : NaN;
     const max = building.floors || 0;
     if (!Number.isInteger(floor) || floor < 1 || (max && floor > max)) return { ...base, error: 'floor', f: params.f };
     return { ...base, kind: 'floor', f: floor, floor, at: nearElevators(b, floor), label: `Floor ${floor}, by the elevators` };
@@ -97,6 +100,12 @@ export function resolveAnchor(params = {}) {
   return { ...base, kind: 'building', floor: 1, at: undefined, label: building.name, isDefault: true };
 }
 
+// Room and floor anchors mean the person is already inside the building, so
+// an outdoor walking map is no use to them.
+export function isInside(anchor) {
+  return !!anchor && (anchor.kind === 'room' || anchor.kind === 'floor');
+}
+
 // The URL params that describe an anchor (to keep it across links).
 export function anchorParams(anchor) {
   if (!anchor || anchor.error === 'building') return {};
@@ -110,32 +119,39 @@ export function anchorParams(anchor) {
 
 const dist = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 
-// Minutes from the anchor to a facility, rounded up (at least 1), or null
-// when we can't tell (another building, or no position on the plan).
-export function walkMinutes(anchor, facility) {
+// Unrounded minutes from the anchor to a facility, or null when we can't
+// tell (another building, or no position on the plan).
+function walkEstimate(anchor, facility) {
   if (!anchor || anchor.error || !facility || facility.building !== anchor.b) return null;
   if (!anchor.at || !facility.at) return null;
-  let metres;
+  let units;
   let extra = 0;
-  if (facility.floor === anchor.floor) metres = dist(anchor.at, facility.at);
+  if (facility.floor === anchor.floor) units = dist(anchor.at, facility.at);
   else {
     const lifts = elevators(anchor.b);
     if (!lifts.length) return null;
-    metres = Math.min(...lifts.map((l) => dist(anchor.at, l.at) + dist(l.at, facility.at)));
+    units = Math.min(...lifts.map((l) => dist(anchor.at, l.at) + dist(l.at, facility.at)));
     extra = ELEVATOR_WAIT_MIN + ELEVATOR_MIN_PER_FLOOR * Math.abs(facility.floor - anchor.floor);
   }
-  return Math.max(1, Math.ceil(metres / WALK_M_PER_MIN + extra - 1e-9));
+  return units / GRID_UNITS_PER_MIN + extra;
 }
 
-// Facilities of a type in the anchor's building, nearest first. Ties go to
-// the working one; facilities we can't time come last.
+// The same, rounded up to whole minutes (at least 1).
+export function walkMinutes(anchor, facility) {
+  const t = walkEstimate(anchor, facility);
+  return t == null ? null : Math.max(1, Math.ceil(t - 1e-9));
+}
+
+// Facilities of a type in the anchor's building, nearest first (by the
+// unrounded estimate). Ties go to the working one; facilities we can't time
+// come last.
 const STATUS_ORDER = { working: 0, unknown: 1, out: 2 };
 export function rankFacilities(type, anchor) {
   if (!anchor || anchor.error) return [];
   return FACILITIES
     .filter((f) => f.type === type && f.building === anchor.b)
-    .map((f) => ({ ...f, walkMin: walkMinutes(anchor, f) }))
-    .sort((x, y) => ((x.walkMin ?? Infinity) - (y.walkMin ?? Infinity))
+    .map((f) => ({ ...f, walkMin: walkMinutes(anchor, f), est: walkEstimate(anchor, f) }))
+    .sort((x, y) => ((x.est ?? Infinity) - (y.est ?? Infinity))
       || ((STATUS_ORDER[x.status] ?? 3) - (STATUS_ORDER[y.status] ?? 3)));
 }
 
