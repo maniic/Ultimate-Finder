@@ -17,7 +17,7 @@
 //  - Verify entrance coordinates in places.js on site.
 
 import { h, append, backLink, minutes } from '/js/ui.js';
-import { getBuilding, getRoom, getRoute, getEntrance, ENTRANCES, FACILITIES, ROOMS, facilityTypeName } from '/js/data.js';
+import { getBuilding, getRoom, getRoute, getEntrance, getFacility, FLOORS, ENTRANCES, ROOMS, facilityTypeName } from '/js/data.js';
 import { outdoorMap } from './map.js';
 import { chooseDestination, entrancesFor, searchUrl, stepFreeInfo } from './outdoor.js';
 import { PLACES } from './places.js';
@@ -59,14 +59,17 @@ function notFound(body, nav) {
 function fill(body, building, params, nav) {
   const stepFree = params.stepfree === '1';
   const sim = params.sim === '1';
-  const facility = params.fac ? FACILITIES.find((f) => f.id === params.fac && f.building === building.code) : null;
-  const room = !facility && params.r ? getRoom(building.code, params.r) : null;
-  const route = room && getRoute(building.code, room.number, stepFree ? 'stepfree' : 'standard');
+  const facility = getFacility(building.code, params.fac);
+  const room = !params.fac && params.r ? getRoom(building.code, params.r) : null;
+  const destination = facility || room;
+  const route = destination && getRoute(building.code, facility?.id || room?.number, stepFree ? 'stepfree' : 'standard');
+  const hasPlan = destination && Object.hasOwn(FLOORS[building.code] || {}, destination.floor);
+  const indoorParams = { b: building.code, r: room?.number, fac: facility?.id, stepfree: stepFree ? '1' : undefined };
   const routeEntrance = route && getEntrance(building.code, route.entrance);
   const hasIndoorData = (ROOMS[building.code] || []).length > 0;
 
   // A room or facility we don't know: say so rather than guess.
-  if ((params.r && !room && hasIndoorData) || (params.fac && !facility)) {
+  if ((!params.fac && params.r && !room && hasIndoorData) || (params.fac && !facility)) {
     append(body, backLink(nav.href('search', { b: building.code })),
       h('p', null, params.fac
         ? `We couldn't find that facility in ${building.name}. Go back and search again.`
@@ -81,15 +84,15 @@ function fill(body, building, params, nav) {
   // Heading
   let heading; let sub = building.name;
   if (facility) {
-    heading = facilityTypeName(facility.type);
+    heading = facility.label || facilityTypeName(facility.type);
     sub = `${building.name} · floor ${facility.floor} · ${facility.near}`;
   } else if (params.r) heading = `${building.code} ${params.r}`;
   else { heading = building.name; sub = null; }
 
   // Where "You're here" leads once outside the door
   let arrival = null;
-  if (route) arrival = { href: nav.href('navigate', { b: building.code, r: room.number, stepfree: stepFree ? '1' : undefined, step: 1 }), label: 'Continue inside' };
-  else if (facility && building.hasPlans) arrival = { href: nav.href('floorplan', { b: building.code, f: facility.floor }), label: 'Continue inside' };
+  if (route) arrival = { href: nav.href('navigate', { ...indoorParams, step: 1 }), label: 'Continue inside' };
+  else if (facility && hasPlan) arrival = { href: nav.href('floorplan', { ...indoorParams, f: facility.floor }), label: 'Continue inside' };
 
   const walkDd = h('dd', null, '–');
   // The entrance can change once a start point is known (nearest one), so
@@ -118,6 +121,15 @@ function fill(body, building, params, nav) {
     explainedFor = id;
     const info = stepFreeInfo(entrances, e);
     const named = (x) => `${x.name}${x.note ? `, ${x.note.toLowerCase()}` : ''}`;
+    if (building.code === 'BA') {
+      stepFreeBox.replaceChildren();
+      append(stepFreeBox,
+        h('strong', null, stepFree ? 'Step-free access unverified' : 'Standard route'),
+        h('p', { class: 'small' }, route
+          ? 'The indoor paths follow corridors and use elevators for floor changes. Check entrance, door and elevator access on site.'
+          : 'Check entrance and elevator access on site.'));
+      return;
+    }
     if (stepFree) {
       stepFreeBox.replaceChildren();
       append(stepFreeBox,
@@ -165,7 +177,8 @@ function fill(body, building, params, nav) {
         searchUrl(building.name) ? h('a', { class: 'btn', target: '_blank', rel: 'noopener', href: searchUrl(building.name) }, 'Find it in Google Maps') : null),
     dest ? h('div', { class: 'card summary' },
       h('dl', { class: 'facts' },
-        h('div', null, h('dt', null, 'Walk'), walkDd, stepFree ? h('dd', null, h('span', { class: 'badge-stepfree' }, icon(), 'Step-free')) : null),
+        h('div', null, h('dt', null, 'Walk'), walkDd, stepFree ? h('dd', null, h('span', { class: 'badge-stepfree' },
+          building.code === 'BA' ? 'Access unverified' : [icon(), 'Step-free'])) : null),
         h('div', null, h('dt', null, 'Entrance'), entranceDd),
         h('div', null, h('dt', null, 'Floor'), h('dd', null, room ? String(room.floor) : facility ? String(facility.floor) : '–'))),
       entranceNote,
@@ -173,8 +186,9 @@ function fill(body, building, params, nav) {
     dest && (!hasIndoorData || (room && !route)) ? h('p', { class: 'notice small' }, room
       ? `Indoor directions to ${building.code} ${room.number} aren't ready yet, so this gets you to the entrance.`
       : `Indoor directions for ${building.name} aren't ready yet, so this gets you to the entrance.`) : null,
-    route ? h('div', { class: 'btn-row' },
-      h('a', { class: 'btn', href: nav.href('floorplan', { b: building.code, f: room.floor, r: room.number, stepfree: stepFree ? '1' : undefined }) }, 'Show floor plan'),
-      h('a', { class: 'btn btn-primary', href: nav.href('navigate', { b: building.code, r: room.number, stepfree: stepFree ? '1' : undefined, step: 1 }) }, 'Start route')) : null,
+    facility?.approximate ? h('p', { class: 'muted small' }, 'The pin shows the general area. Check nearby signs for the exact location.') : null,
+    (route || (facility && hasPlan)) ? h('div', { class: 'btn-row' },
+      hasPlan ? h('a', { class: 'btn', href: nav.href('floorplan', { ...indoorParams, f: destination.floor }) }, 'Show floor plan') : null,
+      route ? h('a', { class: 'btn btn-primary', href: nav.href('navigate', { ...indoorParams, step: 1 }) }, 'Start route') : null) : null,
   );
 }

@@ -12,16 +12,19 @@
 //  - Real photos for each step (the placeholders say what to photograph).
 
 import { h, append, photo, minutes } from '/js/ui.js';
-import { getBuilding, getRoom, getRoute, FLOORS } from '/js/data.js';
+import { getBuilding, getFacility, getRoom, getRoute, facilityTypeName, FLOORS } from '/js/data.js';
+import { getBahenBackground } from '/js/bahen.js';
 import { drawPlan } from '/js/floorplan.js';
 
 export const title = 'Directions';
 
 export function render(root, params, nav) {
   const building = getBuilding(params.b);
-  const room = building && getRoom(building.code, params.r);
+  const facility = building && getFacility(building.code, params.fac);
+  const room = building && !params.fac && getRoom(building.code, params.r);
+  const destinationId = facility?.id || room?.number;
   const variant = params.alt || (params.stepfree === '1' ? 'stepfree' : 'standard');
-  const route = room && getRoute(building.code, room.number, variant);
+  const route = destinationId && getRoute(building.code, destinationId, variant);
   if (!route) {
     append(root, h('p', null, 'No route to show. '), h('a', { href: nav.href('search') }, 'Start a new search'));
     return;
@@ -36,19 +39,22 @@ export function render(root, params, nav) {
 
   // Mini map: this floor, the route points on it, and where you are.
   const onFloor = route.steps.filter((s) => s.floor === step.floor).map((s) => s.at);
-  const mini = drawPlan(FLOORS[building.code]?.[step.floor], { mini: true, highlight: room.number, path: onFloor, marker: step.at });
+  const mini = drawPlan(FLOORS[building.code]?.[step.floor], {
+    mini: true, highlight: destinationId, path: onFloor, marker: step.at,
+    background: getBahenBackground(building.code, step.floor),
+  });
 
   append(root, 
     h('div', { class: 'nav-head' },
       h('div', null,
-        h('p', { class: 'small muted' }, `To ${building.code} ${room.number} · Floor ${step.floor} now`),
+        h('p', { class: 'small muted' }, `To ${facility ? facility.label || facilityTypeName(facility.type) : `${building.code} ${room.number}`} · Floor ${step.floor} now`),
         h('h1', null, `Step ${n} of ${total}`)),
       h('a', { class: 'btn exit', href: nav.href('search') }, 'Exit')),
     h('div', { class: 'progress', role: 'progressbar', 'aria-label': 'Route progress', 'aria-valuemin': 1, 'aria-valuemax': total, 'aria-valuenow': n },
       h('span', { style: `width:${(n / total) * 100}%` })),
     params.alt ? h('p', { class: 'notice small' }, 'New route avoiding the blocked elevator.') : null,
     mini,
-    photo(`Look for: ${step.see}`),
+    building.code === 'BA' ? h('p', { class: 'small muted' }, `Look for: ${step.see}`) : photo(`Look for: ${step.see}`),
     h('p', { class: 'instruction', 'aria-live': 'polite' }, step.text),
     !arrived ? h('p', { class: 'muted small' }, 'Tap Next when you can see this.') : null,
     h('div', { class: 'btn-row' },
@@ -56,7 +62,10 @@ export function render(root, params, nav) {
       arrived
         ? h('a', { class: 'btn btn-primary', href: nav.href('search') }, 'Finish route')
         : h('a', { class: 'btn btn-primary', href: go(n + 1) }, 'Next step')),
-    !arrived ? h('a', { class: 'btn mismatch', href: nav.href('recover', { ...params, step: n }) }, "This isn't what I see") : null,
+    !arrived && room ? h('a', { class: 'btn mismatch', href: nav.href('recover', { ...params, step: n }) }, "This isn't what I see") : null,
+    !arrived && facility ? h('a', { class: 'btn mismatch', href: nav.href('floorplan', {
+      b: building.code, fac: facility.id, f: step.floor, stepfree: params.stepfree, resume: n,
+    }) }, 'Show floor plan') : null,
     route.walkMin ? h('p', { class: 'muted small' }, `About ${minutes(route.walkMin)} total.`) : null,
   );
 }

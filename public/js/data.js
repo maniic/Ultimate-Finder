@@ -1,4 +1,6 @@
-// MOCK DATA, shared by all views. It's based on the paper-prototype scenario
+import { BAHEN_ENTRANCES, BAHEN_FACILITIES, BAHEN_FLOORS, BAHEN_ROOMS, BAHEN_ROUTES } from './bahen.js';
+
+// Shared reference data. The mock OISE data is based on the paper-prototype scenario
 // (OISE room 10-210, Entrances A/B, Elevator C) in submitted_docs/. Layouts,
 // times and statuses are illustrative and NOT verified on site.
 //
@@ -12,12 +14,13 @@
 export const BUILDINGS = [
   { code: 'OI', name: 'OISE · Ontario Institute for Studies in Education', floors: 12, hasPlans: true,
     numberingNote: 'OISE has 12 floors. Room 10-210 is on floor 10, the tenth storey.' },
-  { code: 'BA', name: 'Bahen Centre for Information Technology', floors: 8, hasPlans: false },
+  { code: 'BA', name: 'Bahen Centre for Information Technology', floors: 8, hasPlans: true },
   { code: 'SS', name: 'Sidney Smith Hall', floors: 6, hasPlans: false },
   { code: 'MP', name: 'McLennan Physical Laboratories', floors: 16, hasPlans: false },
 ];
 
 export const ENTRANCES = {
+  BA: BAHEN_ENTRANCES,
   OI: [
     { id: 'A', name: 'Entrance A', detail: 'Bloor St W, by the bike racks', stepFree: true, note: 'Ramp, automatic door' },
     { id: 'B', name: 'Entrance B', detail: 'Bedford Rd side', stepFree: false, note: 'Stairs (6 steps)' },
@@ -29,6 +32,7 @@ export const ENTRANCES = {
 // label = text drawn on the plan; name (optional) = longer accessible name;
 // labelY (optional) = where to draw the label instead of the box centre.
 export const FLOORS = {
+  BA: BAHEN_FLOORS,
   OI: {
     1: [
       { id: 'corridor', kind: 'corridor', x: 5, y: 26, w: 90, h: 8 },
@@ -59,6 +63,7 @@ export const FLOORS = {
 
 // Rooms people can search for. `floor` must exist in FLOORS for the plan view.
 export const ROOMS = {
+  BA: BAHEN_ROOMS,
   OI: [
     { number: '10-210', floor: 10, side: 'right', type: 'Classroom' },
     { number: '10-200', floor: 10, side: 'right', type: 'Classroom' },
@@ -70,6 +75,7 @@ export const ROOMS = {
 // Routes: building:room -> variants. Each step has a mini-map position
 // (`floor`, `at: [x, y]`) and a caption for the photo we'd show.
 export const ROUTES = {
+  ...BAHEN_ROUTES,
   'OI:10-210': {
     standard: {
       entrance: 'B', walkMin: 9,
@@ -131,6 +137,7 @@ export const FACILITIES = [
   { id: 'f5', type: 'charging', building: 'OI', floor: 1, near: 'Lobby benches along the south windows', walkMin: 3, status: 'working', lastConfirmed: '2026-11-01', at: [40, 50] },
   { id: 'f6', type: 'washroom', building: 'OI', floor: 10, near: 'East of Elevators A/B', walkMin: 1, status: 'working', lastConfirmed: '2026-11-14', at: [65, 17] },
   { id: 'f7', type: 'prayer', building: 'OI', floor: 7, near: 'Room 7-162 (multi-faith space)', walkMin: 5, status: 'unknown', lastConfirmed: '2026-08-20', at: [30, 40] },
+  ...BAHEN_FACILITIES,
 ];
 
 // ---- lookups --------------------------------------------------------------
@@ -158,6 +165,10 @@ export function getRoute(code, number, variant = 'standard') {
 
 export function getEntrance(code, id) {
   return (ENTRANCES[code] || []).find((e) => e.id === id);
+}
+
+export function getFacility(building, id) {
+  return id ? FACILITIES.find((facility) => facility.building === building && facility.id === id) : undefined;
 }
 
 export function facilityTypeName(id) {

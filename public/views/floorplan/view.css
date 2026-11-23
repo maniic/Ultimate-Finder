@@ -1,3 +1,11 @@
 .view-floorplan details summary { cursor: pointer; font-weight: 600; }
-.view-floorplan .chips { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
-.view-floorplan .chip { flex: none; }
+.view-floorplan .floor-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+.view-floorplan .floor-tabs .chip { flex: none; min-height: 44px; display: flex; align-items: center; }
+.view-floorplan .map-facilities .chip {
+  display: flex;
+  align-items: center;
+  flex: 1 1 12rem;
+  min-height: 44px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
