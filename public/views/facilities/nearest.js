@@ -50,7 +50,7 @@ function elevators(b) {
 function entrancePoint(b, e) {
   for (const [floor, items] of Object.entries(floorsOf(b))) {
     const it = items.find((x) => x.kind === 'entrance' && (x.name === e.name || x.label === e.id));
-    if (it) return { floor: Number(floor), at: centre(it) };
+    if (it) return { floor: Number(floor), at: it.at || centre(it) };
   }
   return { floor: 1, at: undefined };
 }

@@ -16,7 +16,8 @@
 //    'not-working' reports → show as out of order).
 
 import { h, append, photo, backLink, minutes } from '/js/ui.js';
-import { FACILITY_TYPES, FLOORS, facilityTypeName } from '/js/data.js';
+import { FACILITIES, FACILITY_TYPES, FLOORS, facilityTypeName, getRoute } from '/js/data.js';
+import { getBahenBackground } from '/js/bahen.js';
 import { drawPlan } from '/js/floorplan.js';
 import { reportSection } from './reports.js';
 import { isInside, resolveAnchor, anchorParams, rankFacilities, anchorChoices, anchorBuildings } from './nearest.js';
@@ -26,10 +27,11 @@ export const title = 'Facilities';
 const STATUS = { working: 'Working', out: 'Out of order', unknown: 'Not confirmed' };
 
 function statusLine(f) {
-  return h('span', { class: `small status-${f.status}` }, `${STATUS[f.status]} · last checked ${f.lastConfirmed}`);
+  const checked = f.lastConfirmed ? ` · last checked ${f.lastConfirmed}` : '';
+  return h('span', { class: `small status-${f.status}` }, `${STATUS[f.status]}${checked}`);
 }
 
-const walkText = (f) => (f.walkMin == null ? 'Walk time unknown' : `${minutes(f.walkMin)} walk`);
+const walkText = (f) => (f.walkMin == null ? 'Walk time unknown' : `${f.label ? 'About ' : ''}${minutes(f.walkMin)} walk`);
 
 function floorText(f, anchor) {
   if (f.floor === anchor.floor) return `Floor ${f.floor} (your floor)`;
@@ -60,12 +62,16 @@ export function render(root, params, nav) {
     h('a', { class: 'btn btn-small', href: link({ pick: '1', id: params.id }), 'aria-label': `Change where you are (now ${anchor.label})` }, 'Change'));
 
   if (!params.type) {
+    const types = anchor.b === 'BA'
+      ? FACILITY_TYPES.filter((type) => FACILITIES.some((facility) => facility.building === anchor.b && facility.type === type.id))
+      : FACILITY_TYPES;
     append(root,
       h('h1', null, 'Find a facility'),
       where,
       h('p', { class: 'muted' }, 'What do you need?'),
-      h('div', { class: 'type-grid' }, FACILITY_TYPES.map((t) =>
+      h('div', { class: 'type-grid' }, types.map((t) =>
         h('a', { class: 'card type', href: link({ type: t.id }) }, t.name))),
+      anchor.b === 'BA' ? h('a', { class: 'btn', href: nav.href('floorplan', { b: anchor.b }) }, 'Browse floor maps') : null,
     );
     return;
   }
@@ -75,7 +81,8 @@ export function render(root, params, nav) {
   const lower = typeName.toLowerCase();
   const inside = isInside(anchor);
   const hasPlan = (f) => own(FLOORS, f.building) && own(FLOORS[f.building], f.floor);
-  const planHref = (f) => nav.href('floorplan', { b: f.building, f: f.floor });
+  const planHref = (f) => nav.href('floorplan', { b: f.building, f: f.floor, fac: f.label ? f.id : undefined, stepfree });
+  const hasDirections = (f) => Boolean(getRoute(f.building, f.id, stepfree ? 'stepfree' : 'standard'));
   // Outside (an entrance): the walking map to the building, which then goes
   // on to the floor plan. Already inside (a room or floor): straight to the
   // floor plan, since an outdoor map is no use there.
@@ -94,8 +101,8 @@ export function render(root, params, nav) {
     if (f) {
       append(root,
         backLink(link({ id: undefined }), `All ${lower}s`),
-        h('h1', null, typeName),
-        photo(`${typeName}: ${f.near}`),
+        h('h1', null, f.label || typeName),
+        f.label ? null : photo(`${typeName}: ${f.near}`),
         where,
         h('div', { class: 'card' },
           h('strong', null, `${shortName(anchor.buildingName)} · ${floorText(f, anchor)}`),
@@ -105,11 +112,14 @@ export function render(root, params, nav) {
             ? `We can't estimate the walk from ${anchor.label} yet.`
             : `About ${minutes(f.walkMin)} walk from ${anchor.label}.`)),
         h('div', { class: 'btn-row' },
-          inside ? null : walkThere(f, 'btn btn-primary'),
+          inside ? (hasDirections(f) ? h('a', {
+            class: 'btn', href: nav.href('navigate', { b: f.building, fac: f.id, stepfree, step: 1 }),
+          }, 'Directions from entrance') : null) : walkThere(f, 'btn btn-primary'),
           hasPlan(f)
             ? h('a', { class: inside ? 'btn btn-primary' : 'btn', href: planHref(f) }, 'Show on floor plan')
             : h('button', { class: 'btn', disabled: true }, 'No floor plan yet')),
-        inside ? null : h('p', { class: 'muted small' }, 'Walk there opens the walking map to the building, then the floor plan inside.'),
+        f.approximate ? h('p', { class: 'muted small' }, 'The floor map marks the general area.') : null,
+        inside || f.label ? null : h('p', { class: 'muted small' }, 'Walk there opens the walking map to the building, then the floor plan inside.'),
         reportSection(f.id),
       );
       return;
@@ -124,14 +134,15 @@ export function render(root, params, nav) {
 
   append(root,
     backLink(nav.href('facilities', here), 'All facilities'),
-    h('h1', null, `Nearest ${lower}`),
+    h('h1', null, anchor.b === 'BA' ? typeName : `Nearest ${lower}`),
     where,
     nearestNotWorking ? h('p', { class: 'notice small' }, working
       ? `The nearest one is ${STATUS[nearest.status].toLowerCase()}. The nearest working one is on floor ${working.floor}${working.walkMin == null ? '' : `, ${minutes(working.walkMin)} walk`}.`
       : list.length === 1 ? "It isn't confirmed working right now." : 'None of these is confirmed working right now.') : null,
     planItems
-      ? drawPlan(planItems, {
+      ? drawPlan(planItems.filter((item) => !item.facility), {
         mini: true,
+        background: getBahenBackground(nearest.building, nearest.floor),
         label: `Floor ${nearest.floor} map with ${lower} locations${anchor.floor === nearest.floor && anchor.at ? ' and where you are' : ''}`,
         pins: list.filter(onPlanFloor),
         marker: anchor.floor === nearest.floor ? anchor.at : undefined,
@@ -146,8 +157,9 @@ export function render(root, params, nav) {
       ? h('ul', { class: 'results' }, list.map((f, i) =>
         h('li', { class: 'card result' },
           h('a', { class: 'result-main', href: link({ id: f.id }) },
-            h('div', { class: 'row' }, h('strong', null, floorText(f, anchor)), h('span', null, walkText(f))),
-            i === 0 ? h('span', { class: 'badge' }, 'Nearest') : null,
+            h('div', { class: 'row' }, h('strong', null, f.label || floorText(f, anchor)), h('span', null, walkText(f))),
+            f.label ? h('span', { class: 'muted small' }, floorText(f, anchor)) : null,
+            i === 0 ? h('span', { class: 'badge' }, f.label ? 'Estimated nearest' : 'Nearest') : null,
             h('span', null, f.near),
             statusLine(f)),
           walkThere(f, 'btn btn-small walk'))))

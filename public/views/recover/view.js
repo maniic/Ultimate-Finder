@@ -15,6 +15,7 @@
 
 import { h, append, photo, backLink } from '/js/ui.js';
 import { getBuilding, getRoom, getRoute, FLOORS } from '/js/data.js';
+import { getBahenBackground } from '/js/bahen.js';
 import { drawPlan } from '/js/floorplan.js';
 import { spotsFor, findSpot, findRoomSign, pickVariant, rejoin } from './reroute.js';
 
@@ -132,6 +133,7 @@ function renderHere(root, params, { building, room, why, here, routeParams, nav 
   const r = rejoin(building.code, room.number, spot, variant);
   const plan = drawPlan(FLOORS[building.code]?.[spot.floor], {
     highlight: r?.arrived ? room.number : spot.id, path: r?.path, marker: spot.at,
+    background: getBahenBackground(building.code, spot.floor),
     label: `Floor ${spot.floor} plan: you are at ${spot.name}`,
   });
   const notRight = h('a', { class: 'btn', href: here({ stage: 'where', floor: spot.floor }) }, "That's not where I am");

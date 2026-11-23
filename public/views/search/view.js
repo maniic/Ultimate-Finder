@@ -4,7 +4,7 @@
 //   #/search                    1. search anything, or pick a building
 //   #/search?b=OI               2. what do you need? Find a room / a facility
 //   #/search?b=OI&mode=room     3. enter the room number
-// Out: #/preview?b=<code>&r=<room>  ·  #/facilities?type=<id>&b=<code>
+// Out: #/preview?b=<code>&r=<room> or &fac=<facility>  ·  #/facilities?type=<id>&b=<code>
 //
 // Step 1's search box takes a whole destination: "OI 10-210", "10-210",
 // "bahen", "bottle filler", "washroom". Results are grouped (rooms,
@@ -53,11 +53,11 @@ function splitName(name) {
 // Words people type for each facility type, besides its name.
 const KEYWORDS = {
   'bottle-filler': 'water bottle refill drink',
-  'water-fountain': 'water drink',
+  'water-fountain': 'water drink drinking fountains',
   microwave: 'food heat lunch eat',
   charging: 'charge outlet plug power phone',
-  washroom: 'bathroom toilet restroom wc',
-  prayer: 'pray multi-faith faith quiet',
+  washroom: 'washrooms bathrooms toilets restrooms wc',
+  prayer: 'pray prayer room space multi-faith faith quiet',
 };
 const ICONS = { room: '🚪', 'bottle-filler': '💧', 'water-fountain': '🚰', microwave: '🍲', charging: '🔌', washroom: '🚻', prayer: '🕌' };
 
@@ -106,29 +106,65 @@ export function render(root, params, nav) {
 // Every token the person typed has to appear somewhere in the haystack, so
 // "oi 10-210", "10-210" and "210" all find OISE 10-210.
 const allTokens = (q, hay) => q.split(/\s+/).filter(Boolean).every((t) => hay.includes(t));
+const normalizeSearchText = (text) => text.toLowerCase().replace(/['’‘]/g, '');
+
+function facilityRoomNumber(facility) {
+  const number = String(facility.roomNumber ?? '').trim();
+  return number.toUpperCase().startsWith(facility.building)
+    ? number.slice(facility.building.length).trim()
+    : number;
+}
 
 function search(buildings, query) {
-  const q = query.trim().toLowerCase();
+  const q = normalizeSearchText(query.trim());
   if (!q) return null;
-  const enabled = new Set(buildings.filter((b) => b.enabled).map((b) => b.code));
+  const enabled = new Map(buildings.filter((b) => b.enabled).map((b) => [b.code, b]));
+  const terms = q.split(/\s+/);
+  const compact = q.replace(/\s+/g, '');
   const rooms = [];
-  for (const b of buildings.filter((x) => x.enabled)) {
+  for (const b of enabled.values()) {
     for (const r of ROOMS[b.code] || []) {
       // A room matches only if part of the query is about the room itself, so
       // searching a building name doesn't list all of its rooms.
       const own = `${r.number} ${r.type}`.toLowerCase();
-      if (allTokens(q, `${b.code} ${b.name} ${own}`.toLowerCase()) && q.split(/\s+/).some((t) => own.includes(t))) rooms.push({ b, r });
+      const exactWithCode = compact === `${b.code}${r.number}`.toLowerCase();
+      if (exactWithCode || (allTokens(q, `${b.code} ${b.name} ${own}`.toLowerCase()) && terms.some((t) => own.includes(t)))) rooms.push({ b, r });
     }
   }
-  const facilities = q.length < 2 ? [] : FACILITY_TYPES
+  const locations = [];
+  if (q.length >= 2) {
+    for (const f of FACILITIES) {
+      const b = enabled.get(f.building);
+      if (!b || !f.label) continue;
+      const number = facilityRoomNumber(f);
+      const address = number ? `${b.code}${number}` : '';
+      const exact = number && (compact === address.toLowerCase() || q === number.toLowerCase());
+      const building = `${b.code} ${b.name}`.toLowerCase();
+      const buildingWords = building.split(/\W+/);
+      const type = FACILITY_TYPES.find((t) => t.id === f.type);
+      const own = normalizeSearchText([f.label, address, f.near, type?.name, KEYWORDS[f.type], ...(f.aliases ?? [])].join(' '));
+      const mentionsFacility = terms.some((term) => !buildingWords.includes(term) && own.includes(term));
+      const genderMatches = terms.every((term) => !['mens', 'womens'].includes(term) || own.split(/\W+/).includes(term));
+      if (exact || (mentionsFacility && genderMatches && allTokens(q, `${building} ${own}`))) {
+        locations.push({ b, f, address, exact: Boolean(exact) });
+      }
+    }
+    locations.sort((a, b) => Number(b.exact) - Number(a.exact));
+  }
+  const scope = [...enabled.values()].find((building) => {
+    const short = splitName(building.name).short.toLowerCase().split(' ')[0];
+    return terms.includes(building.code.toLowerCase()) || terms.includes(short);
+  });
+  const facilities = q.length < 2 || (scope && locations.length) ? [] : FACILITY_TYPES
     .filter((t) => allTokens(q, `${t.name} ${t.id} ${KEYWORDS[t.id] || ''}`.toLowerCase()))
     .map((t) => {
       const here = FACILITIES.filter((f) => f.type === t.id && enabled.has(f.building));
-      return { t, count: here.length, where: [...new Set(here.map((f) => f.building))].join(', ') };
+      const codes = [...new Set(here.map((f) => f.building))];
+      return { t, count: here.length, where: codes.join(', '), building: codes.length === 1 ? codes[0] : undefined };
     });
   const blds = buildings.filter((b) => allTokens(q, `${b.code} ${b.name}`.toLowerCase()) &&
     (b.code.toLowerCase().startsWith(q) || b.name.toLowerCase().includes(q) || q.length >= 2));
-  return { rooms, facilities, blds };
+  return { rooms, locations, facilities, blds };
 }
 
 function drawLanding(root, buildings, nav, notice) {
@@ -179,13 +215,22 @@ function drawLanding(root, buildings, nav, notice) {
       });
       sections.push(h('section', { class: 'section' }, h('h2', { class: 'section-title' }, 'Rooms'), ...items));
     }
+    if (res.locations.length) {
+      const items = res.locations.map(({ b, f, address }) => {
+        const href = nav.href('preview', { b: b.code, fac: f.id });
+        first ??= href;
+        const location = [splitName(b.name).short, `Floor ${f.floor}`, address].filter(Boolean).join(' · ');
+        return row(f.type, href, f.label, location);
+      });
+      sections.push(h('section', { class: 'section' }, h('h2', { class: 'section-title' }, 'Facilities'), ...items));
+    }
     if (res.facilities.length) {
-      const items = res.facilities.map(({ t, count, where }) => {
-        const href = nav.href('facilities', { type: t.id });
+      const items = res.facilities.map(({ t, count, where, building }) => {
+        const href = nav.href('facilities', { b: building, type: t.id });
         if (count) first ??= href;
         return row(t.id, href, t.name, count ? `${count} place${count === 1 ? '' : 's'} · ${where}` : 'No locations yet', !count);
       });
-      sections.push(h('section', { class: 'section' }, h('h2', { class: 'section-title' }, 'Facilities'), ...items));
+      sections.push(h('section', { class: 'section' }, h('h2', { class: 'section-title' }, res.locations.length ? 'Facility types' : 'Facilities'), ...items));
     }
     if (res.blds.length) {
       const items = res.blds.sort((a, b) => (b.enabled - a.enabled) || a.name.localeCompare(b.name)).map((b) => {
@@ -253,14 +298,21 @@ function drawChoice(root, b, nav) {
 
 function drawRoom(root, b, params, nav) {
   const known = ROOMS[b.code] || [];
-  const roomInput = h('input', { type: 'text', id: 'room', placeholder: 'e.g. 10-210', value: params.r || '', autocomplete: 'off' });
+  const example = known[0] ? `e.g. ${b.code} ${known[0].number}` : 'Enter a room number';
+  const roomInput = h('input', { type: 'text', id: 'room', placeholder: example, value: params.r || '', autocomplete: 'off' });
   const message = h('p', { class: 'message', role: 'status' });
 
   function submit(e) {
     e.preventDefault();
-    const room = roomInput.value.trim();
+    const entered = roomInput.value.trim();
+    const room = entered.toUpperCase().startsWith(b.code) ? entered.slice(b.code.length).trim() : entered;
     if (!room) { message.textContent = 'Enter a room number.'; roomInput.focus(); return; }
     if (!known.some((r) => r.number === room)) {
+      const facility = FACILITIES.find((f) => f.building === b.code && facilityRoomNumber(f).toLowerCase() === room.toLowerCase());
+      if (facility) {
+        nav.go('preview', { b: b.code, fac: facility.id });
+        return;
+      }
       message.textContent = `${b.code} has no room "${room}".` +
         (known.length ? ` Rooms we know: ${known.map((r) => r.number).join(', ')}.` : '');
       roomInput.setAttribute('aria-invalid', 'true');

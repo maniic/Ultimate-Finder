@@ -76,7 +76,20 @@ test('walkMinutes: same floor is a short walk, other floors add the elevator, ot
   assert.equal(walkMinutes(room, fac('f2')), 9);
   assert.equal(walkMinutes(room, { ...fac('f1'), building: 'BA' }), null);
   assert.equal(walkMinutes(room, { ...fac('f1'), at: undefined }), null);
-  for (const f of FACILITIES) assert.ok(walkMinutes(lobby, f) >= 1, f.id);
+  for (const f of FACILITIES) {
+    if (f.building === 'OI') assert.ok(walkMinutes(lobby, f) >= 1, f.id);
+    else assert.equal(walkMinutes(lobby, f), null, f.id);
+  }
+});
+
+test('Bahen facilities rank within Bahen from its mapped entrance', () => {
+  const anchor = resolveAnchor({ b: 'BA' });
+  assert.equal(anchor.e, 'M');
+  assert.ok(anchor.at?.every(Number.isFinite));
+  const washrooms = rankFacilities('washroom', anchor);
+  assert.equal(washrooms.length, 8);
+  assert.ok(washrooms.every((facility) => facility.building === 'BA' && facility.walkMin >= 1));
+  assert.equal(rankFacilities('prayer', anchor)[0].roomNumber, '1255');
 });
 
 test('rankFacilities: nearest first from the anchor, so the order changes with where you are', () => {
@@ -104,7 +117,9 @@ test('anchorBuildings puts buildings with facility data first', () => {
   const list = anchorBuildings();
   assert.equal(list[0].code, 'OI');
   assert.equal(list[0].hasFacilities, true);
-  assert.ok(list.slice(1).every((b) => !b.hasFacilities));
+  assert.equal(list[1].code, 'BA');
+  assert.equal(list[1].hasFacilities, true);
+  assert.ok(list.slice(2).every((b) => !b.hasFacilities));
 });
 
 test('isInside: rooms and floors are inside the building, entrances are not', () => {
