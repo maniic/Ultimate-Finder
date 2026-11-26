@@ -44,3 +44,38 @@ body.map-open { overflow: hidden; }
 .view-preview .stepfree-info p { margin: 0; }
 .view-preview .stepfree-info .warn { color: var(--warn); font-weight: 600; }
 .view-preview .badge-stepfree { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 999px; background: var(--ok); color: #fff; font-size: 0.75rem; font-weight: 700; }
+
+/* ---- compact layout: the whole preview fits one phone screen ---- */
+.view-preview .preview-body { gap: 10px; }
+.view-preview .preview-body h1 { margin: 0; font-size: 1.35rem; }
+.view-preview .preview-body h1 + p { margin: 0; }
+.view-preview .preview-body > .card { padding: 10px 12px; gap: 6px; }
+.view-preview .route-type .chip { padding: 8px; }
+.view-preview .stepfree-info { font-size: 0.875rem; }
+.view-preview .stepfree-info strong { font-size: 0.95rem; }
+.view-preview .map { aspect-ratio: 16 / 9; }
+.view-preview .outdoor { gap: 8px; }
+.view-preview .outdoor > p, .view-preview .map-status { font-size: 0.9rem; }
+.view-preview .outdoor .btn { padding-top: 8px; padding-bottom: 8px; }
+.view-preview .map-start select { padding: 6px 10px; }
+.view-preview .facts dt { font-size: 0.75rem; }
+.view-preview .facts dd { font-size: 1rem; line-height: 1.25; }
+.view-preview .summary p { margin: 0; font-size: 0.8rem; color: var(--muted); }
+.view-preview .preview-body > .btn-row .btn { padding-top: 10px; padding-bottom: 10px; }
+.view-preview .facts { grid-template-columns: auto 1fr auto; gap: 12px; }
+.view-preview .facts dd { white-space: normal; }
+.view-preview { padding-top: 10px; padding-bottom: 10px; }
+.view-preview .preview-body h1 + p { font-size: 0.9rem; }
+.view-preview .stepfree-info:not(.is-on) { display: block; }
+.view-preview .stepfree-info:not(.is-on) strong::after { content: " · "; font-weight: 400; }
+.view-preview .stepfree-info:not(.is-on) p { display: inline; }
+.view-preview .map { aspect-ratio: 2 / 1; }
+.view-preview .map-start { flex-direction: row; align-items: center; gap: 8px; }
+.view-preview .map-start select { flex: 1; min-width: 0; }
+.view-preview .preview-body > .btn-row .btn-primary { flex: 1.5; }
+.view-preview .preview-body > .btn-row .btn { white-space: nowrap; font-size: 0.95rem; padding-left: 10px; padding-right: 10px; }
+.view-preview .map-start { white-space: nowrap; }
+.view-preview .stepfree-info.is-on { font-size: 0.85rem; gap: 2px; }
+.view-preview .stepfree-info.is-on ul { gap: 0; }
+.view-preview .outdoor > p { font-size: 0.85rem; }
+.view-preview .map { aspect-ratio: 9 / 4; }

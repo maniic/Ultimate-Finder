@@ -170,7 +170,7 @@ test('location denied: explains it and offers start points instead', async () =>
   await page.locator('[data-fake-map]').waitFor();
   await page.getByRole('button', { name: /directions from my location/i }).click();
   await page.getByText(/location is off/i).waitFor();
-  await page.getByLabel(/starting from/i).selectOption({ label: 'Robarts Library' });
+  await page.getByLabel(/start from/i).selectOption({ label: 'Robarts Library' });
   await page.getByText('640 m').waitFor();
   const req = (await page.evaluate(() => window.__fake.routeRequests))[0];
   assert.deepEqual(req.origin, { lat: 43.66443, lng: -79.39915 });

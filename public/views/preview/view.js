@@ -157,9 +157,10 @@ function fill(body, building, params, nav) {
   function showEntrance(e) {
     if (!e) return;
     entranceDd.textContent = e.name;
-    const bits = [e.detail, e.note].filter(Boolean);
-    entranceNote.textContent = bits.length ? `${bits.join('. ')}.` : '';
-    entranceNote.hidden = !bits.length;
+    // The map already names the entrance and its address, so only the note here.
+    const note = e.note ? e.note.replace(/\.+$/, '') : '';
+    entranceNote.textContent = note ? `${note}.` : '';
+    entranceNote.hidden = !note;
     explainStepFree(e);
   }
   function explainStepFree(e) {
