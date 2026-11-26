@@ -7,6 +7,7 @@
 //      (see nearest.js). &pick=1 opens the "Where are you?" chooser.
 // Out: #/floorplan?b&f (show it on the plan)
 //      #/preview?b&fac[&stepfree] ("Walk there": walking map to the building)
+//      #/preview?b=BA&fac&from=r:<room> or &from=f:<floor> (already inside)
 //
 // TODO (from the evaluation):
 //  - Think-aloud finding 4: testers liked this most; consider surfacing it on
@@ -46,11 +47,12 @@ function shortName(name) {
 export function render(root, params, nav) {
   const anchor = resolveAnchor(params);
   const stepfree = params.stepfree === '1' ? '1' : undefined;
-  const here = { ...anchorParams(anchor), stepfree };
+  const via = anchor.b === 'BA' && !stepfree && params.via === 'stairs' ? 'stairs' : undefined;
+  const here = { ...anchorParams(anchor), stepfree, via };
   const link = (extra) => nav.href('facilities', { ...here, type: params.type, ...extra });
 
-  if (anchor.error) { anchorError(root, anchor, params, nav, stepfree); return; }
-  if (params.pick === '1') { picker(root, anchor, params, nav, stepfree); return; }
+  if (anchor.error) { anchorError(root, anchor, params, nav, stepfree, via); return; }
+  if (params.pick === '1') { picker(root, anchor, params, nav, stepfree, via); return; }
 
   // "Nearest to what?" card, shown on every screen below.
   const where = h('div', { class: 'card anchor' },
@@ -80,16 +82,19 @@ export function render(root, params, nav) {
   const typeName = facilityTypeName(params.type);
   const lower = typeName.toLowerCase();
   const inside = isInside(anchor);
+  const from = anchor.b === 'BA' && inside ? (anchor.r ? `r:${anchor.r}` : `f:${anchor.f}`) : undefined;
   const hasPlan = (f) => own(FLOORS, f.building) && own(FLOORS[f.building], f.floor);
-  const planHref = (f) => nav.href('floorplan', { b: f.building, f: f.floor, fac: f.label ? f.id : undefined, stepfree });
+  const planHref = (f) => nav.href('floorplan', { b: f.building, f: f.floor, fac: f.label ? f.id : undefined, stepfree, from, via });
   const hasDirections = (f) => Boolean(getRoute(f.building, f.id, stepfree ? 'stepfree' : 'standard'));
-  // Outside (an entrance): the walking map to the building, which then goes
-  // on to the floor plan. Already inside (a room or floor): straight to the
-  // floor plan, since an outdoor map is no use there.
+  const canRouteFromHere = (f) => from && Boolean(
+    getRoute(f.building, f.id, stepfree ? 'stepfree' : 'standard', from)
+      || (!stepfree && getRoute(f.building, f.id, 'stairs', from))
+  );
   const walkThere = (f, cls = 'btn') => {
-    if (!inside) {
-      return h('a', { class: cls, href: nav.href('preview', { b: f.building, fac: f.id, stepfree }),
-        'aria-label': `Walk there: map to ${lower}, floor ${f.floor}` }, 'Walk there');
+    if (!inside || canRouteFromHere(f)) {
+      return h('a', { class: cls, href: nav.href('preview', { b: f.building, fac: f.id, stepfree, from, via }),
+        'aria-label': from ? `Walk there: from ${anchor.label} to ${f.label || `${lower}, floor ${f.floor}`}`
+          : `Walk there: map to ${lower}, floor ${f.floor}` }, 'Walk there');
     }
     return hasPlan(f)
       ? h('a', { class: cls, href: planHref(f), 'aria-label': `Floor plan: ${lower}, floor ${f.floor}` }, 'Floor plan')
@@ -99,6 +104,7 @@ export function render(root, params, nav) {
   if (params.id) {
     const f = list.find((x) => x.id === params.id);
     if (f) {
+      const fromDirections = canRouteFromHere(f);
       append(root,
         backLink(link({ id: undefined }), `All ${lower}s`),
         h('h1', null, f.label || typeName),
@@ -112,12 +118,14 @@ export function render(root, params, nav) {
             ? `We can't estimate the walk from ${anchor.label} yet.`
             : `About ${minutes(f.walkMin)} walk from ${anchor.label}.`)),
         h('div', { class: 'btn-row' },
-          inside ? (hasDirections(f) ? h('a', {
-            class: 'btn', href: nav.href('navigate', { b: f.building, fac: f.id, stepfree, step: 1 }),
-          }, 'Directions from entrance') : null) : walkThere(f, 'btn btn-primary'),
+          !inside || fromDirections ? walkThere(f, 'btn btn-primary')
+            : !from && hasDirections(f) ? h('a', {
+              class: 'btn', href: nav.href('navigate', { b: f.building, fac: f.id, stepfree, step: 1 }),
+            }, 'Directions from entrance') : null,
           hasPlan(f)
-            ? h('a', { class: inside ? 'btn btn-primary' : 'btn', href: planHref(f) }, 'Show on floor plan')
+            ? h('a', { class: inside && !fromDirections ? 'btn btn-primary' : 'btn', href: planHref(f) }, 'Show on floor plan')
             : h('button', { class: 'btn', disabled: true }, 'No floor plan yet')),
+        from && !fromDirections ? h('p', { class: 'muted small' }, `Directions from ${anchor.label} aren't available for this facility yet.`) : null,
         f.approximate ? h('p', { class: 'muted small' }, 'The floor map marks the general area.') : null,
         inside || f.label ? null : h('p', { class: 'muted small' }, 'Walk there opens the walking map to the building, then the floor plan inside.'),
         reportSection(f.id),
@@ -179,20 +187,20 @@ const ERRORS = {
   floor: (a) => `${shortName(a.buildingName)} has no floor "${a.f}".`,
 };
 
-function anchorError(root, anchor, params, nav, stepfree) {
+function anchorError(root, anchor, params, nav, stepfree, via) {
   const b = anchor.error === 'building' ? undefined : anchor.b;
   append(root,
-    backLink(nav.href('facilities', { b, stepfree, type: params.type }), 'Back'),
+    backLink(nav.href('facilities', { b, stepfree, via, type: params.type }), 'Back'),
     h('h1', null, 'Where are you?'),
     h('p', { class: 'notice' }, `${ERRORS[anchor.error](anchor)} Pick where you are instead.`),
-    h('a', { class: 'btn btn-primary', href: nav.href('facilities', { b, stepfree, type: params.type, pick: '1' }) }, 'Choose where you are'),
+    h('a', { class: 'btn btn-primary', href: nav.href('facilities', { b, stepfree, via, type: params.type, pick: '1' }) }, 'Choose where you are'),
   );
 }
 
 // "Where are you?" Entrances, floors and rooms in this building, plus other
 // buildings. Every choice is a link that sets the anchor and keeps the type.
-function picker(root, anchor, params, nav, stepfree) {
-  const go = (p) => nav.href('facilities', { b: anchor.b, stepfree, type: params.type, id: params.id, ...p });
+function picker(root, anchor, params, nav, stepfree, via) {
+  const go = (p) => nav.href('facilities', { b: anchor.b, stepfree, via, type: params.type, id: params.id, ...p });
   const c = anchorChoices(anchor.b);
   const current = anchorParams({ ...anchor, isDefault: false });
   const isCurrent = (p) => Object.entries(p).every(([k, v]) => current[k] === v) && Object.keys(p).length;

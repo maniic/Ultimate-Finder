@@ -1,4 +1,4 @@
-import { BAHEN_ENTRANCES, BAHEN_FACILITIES, BAHEN_FLOORS, BAHEN_ROOMS, BAHEN_ROUTES } from './bahen.js';
+import { BAHEN_ENTRANCES, BAHEN_FACILITIES, BAHEN_FLOORS, BAHEN_ROOMS, BAHEN_ROUTES, getBahenRoute } from './bahen.js';
 
 // Shared reference data. The mock OISE data is based on the paper-prototype scenario
 // (OISE room 10-210, Entrances A/B, Elevator C) in submitted_docs/. Layouts,
@@ -157,8 +157,13 @@ export function getRoom(code, number) {
   return (ROOMS[String(code || '').toUpperCase()] || []).find((r) => r.number === number);
 }
 
-export function getRoute(code, number, variant = 'standard') {
-  const r = ROUTES[`${String(code || '').toUpperCase()}:${number}`];
+export function getRoute(code, number, variant = 'standard', from) {
+  const building = String(code || '').toUpperCase();
+  if (from || variant === 'stairs') {
+    return building === 'BA' && ['standard', 'stepfree', 'stairs'].includes(variant)
+      ? getBahenRoute(number, variant, from) : undefined;
+  }
+  const r = ROUTES[`${building}:${number}`];
   // Own-property check: `variant` can come from the URL (?alt=constructor).
   return r && Object.hasOwn(r, variant) && r[variant]?.steps ? r[variant] : undefined;
 }

@@ -38,8 +38,8 @@ export function render(root, params, nav) {
   const items = FLOORS[building.code][floor];
 
   const background = getBahenBackground(building.code, floor);
-  const variant = params.stepfree === '1' ? 'stepfree' : 'standard';
-  const route = destinationId && getRoute(building.code, destinationId, variant);
+  const variant = params.stepfree === '1' ? 'stepfree' : params.via === 'stairs' ? 'stairs' : 'standard';
+  const route = destinationId && getRoute(building.code, destinationId, variant, params.from);
   const resume = Number(params.resume);
   const routeStep = facility && route && Number.isInteger(resume) && resume > 1 && resume <= route.steps.length ? resume : 1;
   let path;
@@ -52,20 +52,21 @@ export function render(root, params, nav) {
     path = [[elevator.x + elevator.w / 2, elevator.y + elevator.h], [elevator.x + elevator.w / 2, cy], [target.x + target.w / 2, cy], [target.x + target.w / 2, target.y]];
   }
 
-  const keep = { b: building.code, r: room?.number, fac: facility?.id, stepfree: params.stepfree };
+  const keep = { b: building.code, r: room?.number, fac: facility?.id, stepfree: params.stepfree,
+    from: params.from, via: params.via };
   const infoText = facility
     ? (facility.floor === floor ? facility.near : `${facility.label || facilityTypeName(facility.type)} is on floor ${facility.floor}.`)
     : room ? (room.floor === floor ? `${room.number} is highlighted.` : `${room.number} is on floor ${room.floor}.`) : 'Tap a room or facility.';
   const info = h('p', { class: 'muted small', role: 'status' }, infoText);
   const facilityLinks = items.filter((item) => item.facility).map((item) => h('a', {
     class: 'chip', 'aria-current': item.id === destinationId ? 'true' : undefined,
-    href: nav.href('floorplan', { b: building.code, fac: item.id, f: floor, stepfree: params.stepfree,
+    href: nav.href('floorplan', { ...keep, r: undefined, fac: item.id, f: floor,
       resume: item.id === destinationId && routeStep > 1 ? routeStep : undefined }),
   }, item.name));
   const plan = drawPlan(items, {
     highlight: destinationId, path, background,
     onSelect: (it) => {
-      if (it.facility) nav.go('floorplan', { b: building.code, fac: it.id, f: floor, stepfree: params.stepfree,
+      if (it.facility) nav.go('floorplan', { ...keep, r: undefined, fac: it.id, f: floor,
         resume: it.id === destinationId && routeStep > 1 ? routeStep : undefined });
       else info.textContent = `${it.name || it.label || it.id}${it.kind !== 'room' ? ` (${it.kind})` : ''}`;
     },
@@ -81,7 +82,7 @@ export function render(root, params, nav) {
     plan,
     info,
     facility?.floor === floor && facility.approximate ? h('p', { class: 'muted small' }, 'Approximate location. Check nearby signs.') : null,
-    route || room ? h('a', { class: 'btn btn-primary', href: nav.href('navigate', { ...keep, step: routeStep }) },
+    route || (room && !params.from) ? h('a', { class: 'btn btn-primary', href: nav.href('navigate', { ...keep, step: routeStep }) },
       routeStep > 1 ? 'Continue route' : 'Start route') : null,
     facilityLinks.length ? h('div', { class: 'chips map-facilities', role: 'group', 'aria-label': 'Facilities on this floor' }, facilityLinks) : null,
     h('details', { class: 'card' }, h('summary', null, 'Map legend'), legend({ reference: Boolean(background) })),

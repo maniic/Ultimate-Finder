@@ -149,3 +149,39 @@ test('already inside (a room): no outdoor map, the buttons go to the floor plan'
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+test('Bahen Walk there retains the selected room on both the list and the detail', async () => {
+  const { page, context } = await open('#/facilities?b=BA&type=washroom&via=stairs');
+  await page.getByRole('link', { name: /Change where you are/ }).click();
+  await page.getByRole('link', { name: /Room 2179/ }).click();
+  const name = 'Washrooms by the east elevators · Floor 2';
+  const result = page.locator('.results li').filter({ hasText: name });
+  const walk = result.getByRole('link', { name: `Walk there: from Room 2179 to ${name}`, exact: true });
+  await walk.waitFor();
+  const href = await walk.getAttribute('href');
+  const params = new URLSearchParams(href.split('?')[1]);
+  assert.ok(href.startsWith('#/preview?'));
+  assert.equal(params.get('from'), 'r:2179');
+  assert.equal(params.get('fac'), 'ba-washrooms-east-2');
+  assert.equal(params.get('via'), 'stairs');
+  await result.locator('.result-main').click();
+  await page.getByRole('heading', { name, exact: true }).waitFor();
+  const detailWalk = page.locator('.btn-row').getByRole('link', { name: `Walk there: from Room 2179 to ${name}`, exact: true });
+  assert.equal(await detailWalk.getAttribute('href'), href);
+  await context.close();
+});
+
+test('Bahen map-only facilities retain the selected floor separately from the map floor', async () => {
+  const { page, context } = await open('#/facilities?b=BA&f=2&type=water-fountain');
+  const result = page.locator('.results li').filter({ hasText: 'Water fountain near BA3285' });
+  const map = result.getByRole('link', { name: /Floor plan/ });
+  await map.waitFor();
+  const href = await map.getAttribute('href');
+  const params = new URLSearchParams(href.split('?')[1]);
+  assert.ok(href.startsWith('#/floorplan?'));
+  assert.equal(params.get('f'), '3');
+  assert.equal(params.get('from'), 'f:2');
+  assert.equal(params.get('fac'), 'ba-water-3');
+  assert.equal(await result.getByRole('link', { name: /Walk there/ }).count(), 0);
+  await context.close();
+});

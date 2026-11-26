@@ -23,8 +23,8 @@ export function render(root, params, nav) {
   const facility = building && getFacility(building.code, params.fac);
   const room = building && !params.fac && getRoom(building.code, params.r);
   const destinationId = facility?.id || room?.number;
-  const variant = params.alt || (params.stepfree === '1' ? 'stepfree' : 'standard');
-  const route = destinationId && getRoute(building.code, destinationId, variant);
+  const variant = params.alt || (params.stepfree === '1' ? 'stepfree' : params.via === 'stairs' ? 'stairs' : 'standard');
+  const route = destinationId && getRoute(building.code, destinationId, variant, params.from);
   if (!route) {
     append(root, h('p', null, 'No route to show. '), h('a', { href: nav.href('search') }, 'Start a new search'));
     return;
@@ -64,7 +64,8 @@ export function render(root, params, nav) {
         : h('a', { class: 'btn btn-primary', href: go(n + 1) }, 'Next step')),
     !arrived && room ? h('a', { class: 'btn mismatch', href: nav.href('recover', { ...params, step: n }) }, "This isn't what I see") : null,
     !arrived && facility ? h('a', { class: 'btn mismatch', href: nav.href('floorplan', {
-      b: building.code, fac: facility.id, f: step.floor, stepfree: params.stepfree, resume: n,
+      b: building.code, fac: facility.id, f: step.floor, stepfree: params.stepfree,
+      from: params.from, via: params.via, resume: n,
     }) }, 'Show floor plan') : null,
     route.walkMin ? h('p', { class: 'muted small' }, `About ${minutes(route.walkMin)} total.`) : null,
   );
