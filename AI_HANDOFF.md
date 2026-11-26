@@ -2,8 +2,10 @@
 
 ## Team review — Bahen indoor directions (2026-11-26)
 
-- The preview puts Start indoor directions and the floor plan before the map
-  to the building. Exterior directions remain available below.
+- The preview puts Start indoor directions and the floor plan under the map
+  and the walk summary (moved back there on 2026-11-26 at Abdullah's request;
+  PR #18 had put them above the map). Only an indoor start (`from=`), which
+  has no map, shows them near the top.
 - A Bahen facility route carries the selected room or floor into preview,
   navigation and the floor plan. A fixture with only a map pin remains map-only.
 - Cross-floor routes offer stairs or the east elevators. The usual stairs
@@ -11,14 +13,20 @@
   flight. The shorter option for the north corridor uses 1135S, 2130S
   and 3130S. A teammate confirmed the floor connections and public
   hallways. Use the on-site pilot to check signs, landings and instructions.
-- Review branch: `fix/bahen-indoor-wayfinding`, based on the PR #17 merge.
-  Teammate review and an on-site walkthrough are still pending.
+- Merged as PR #18. An on-site walkthrough is still pending.
+- 27 Bahen rooms now have routes (22 added 2026-11-26 from the floor plans):
+  floor 1 lecture rooms 1160, 1170, 1180, 1190, 1200–1240; floor 2 north
+  rooms 2139, 2145, 2159, 2165, 2175, 2179, 2185, 2195; floor 3 north rooms
+  3000, 3135–3195, 3200. Door points sit on the door swings drawn in the
+  plans; 2195/3195 go through the 2197/3197 vestibules, 2145/2165 through
+  short passages. Not yet checked on site. Rooms without a clear door on the
+  plans (1130, 2155, floor 2/3 south wing) were left out.
 
 > **Protocol:** Read this file in full at the start of every session. Update it
 > at the end of every working pass: move finished items, record decisions with
 > their why, keep "Next up" honest. Record the current state, not a transcript.
 
-**Last updated:** 2026-11-21 (facilities: "nearest to what?" + Walk there)
+**Last updated:** 2026-11-26 (more Bahen rooms; indoor buttons back under the map)
 
 ## Current state
 
@@ -57,6 +65,8 @@ design changes on pp. 22–32.
   names as well as codes (done in the starter).
 
 ## Decisions log
+
+- **2026-11-26: More Bahen rooms; indoor buttons under the map (branch `view/preview-bahen-rooms`).** Abdullah found the PR #18 layout (indoor buttons above the map) confusing, so they're back under the map and summary. `public/js/bahen.js` (shared, approved by Abdullah for this) gained 22 rooms read off `public/maps/bahen/floor-*.png`, using `hallRoute`/`southRoute` helpers so each new room is one line. A test checks every room ends on its floor beside its outline.
 
 - **2026-11-25: Entrance pins from OpenStreetMap (branch `view/preview-entrances`).** `places.js` coordinates now come from OSM entrance nodes on each building outline (ids in comments): OISE A on the Bloor St W front, OISE B on the east side toward Bedford Rd, Bahen M on the St. George St side. Checked visually on the live Google map. Tests read pins from `places.js`, and the stale "Bahen has no indoor data" test now checks Bahen gets indoor steps.
 
