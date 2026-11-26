@@ -213,9 +213,13 @@ test('a cross-floor Bahen room switches between the elevator and stairs', async 
   const elevator = page.getByRole('button', { name: 'Elevator', exact: true });
   const stairs = page.getByRole('button', { name: 'Stairs', exact: true });
   const start = page.getByRole('link', { name: /start indoor directions/i });
-  await elevator.waitFor();
-  assert.equal(await elevator.getAttribute('aria-pressed'), 'true');
-  assert.doesNotMatch(await start.getAttribute('href'), /via=stairs/);
+  await page.locator('#route-stairs[aria-pressed="true"]').waitFor();
+  assert.match(await start.getAttribute('href'), /via=stairs/);
+  await elevator.click();
+  await page.locator('#route-elevator[aria-pressed="true"]').waitFor();
+  assert.match(await start.getAttribute('href'), /via=elevator/);
+  await page.reload();
+  await page.locator('#route-elevator[aria-pressed="true"]').waitFor();
   await stairs.click();
   await page.locator('#route-stairs[aria-pressed="true"]').waitFor();
   assert.match(await start.getAttribute('href'), /via=stairs/);
@@ -231,8 +235,59 @@ test('a cross-floor Bahen room switches between the elevator and stairs', async 
   await context.close();
 });
 
+test('switching modes from an indoor Bahen start restarts the same trip on either route', async () => {
+  const origin = 'from=r%3A2179';
+  const facility = 'fac=ba-washroom-1108';
+  const { page, context } = await open('#/preview?b=BA&' + facility + '&' + origin,
+    { viewport: { width: 320, height: 640 } });
+  await page.locator('#route-stairs[aria-pressed="true"]').waitFor();
+  await page.getByRole('link', { name: 'Start indoor directions' }).click();
+  for (const [mode, next] of [['elevator', 'stairs'], ['stairs', 'elevator']]) {
+    await page.getByRole('heading', { name: /^Step 1 of / }).waitFor();
+    await page.getByRole('link', { name: 'Next step', exact: true }).click();
+    await page.getByRole('heading', { name: /^Step 2 of / }).waitFor();
+    const change = page.getByRole('link', { name: 'Switch to ' + mode, exact: true });
+    assert.ok(await page.getByText('Restarts from BA 2179.', { exact: true }).isVisible());
+    assert.ok((await change.boundingBox()).height >= 44);
+    await change.click();
+    await page.getByRole('heading', { name: /^Step 1 of / }).waitFor();
+    const query = new URLSearchParams(new URL(page.url()).hash.split('?')[1]);
+    assert.equal(query.get('via'), mode);
+    assert.equal(query.get('from'), 'r:2179');
+    assert.equal(query.get('fac'), 'ba-washroom-1108');
+    assert.equal(query.get('step'), '1');
+    assert.ok(await page.getByRole('link', { name: 'Switch to ' + next, exact: true }).isVisible());
+  }
+  await page.getByRole('link', { name: 'Next step', exact: true }).click();
+  await page.getByRole('heading', { name: /^Step 2 of / }).waitFor();
+  await page.getByRole('link', { name: 'Show floor plan', exact: true }).click();
+  const resume = page.getByRole('link', { name: 'Continue route', exact: true });
+  assert.match(await resume.getAttribute('href'), /via=stairs.*step=2/);
+  await resume.click();
+  await page.getByRole('heading', { name: /^Step 2 of / }).waitFor();
+  assert.ok(await page.getByRole('link', { name: 'Switch to elevator', exact: true }).isVisible());
+  await context.close();
+});
+
+test('a Bahen floor plan defaults a new trip to stairs and respects step-free directions', async () => {
+  const { page, context } = await open('#/floorplan?b=BA&r=2179&f=2');
+  const start = page.getByRole('link', { name: 'Start route', exact: true });
+  assert.match(await start.getAttribute('href'), /via=stairs/);
+  await page.goto(base + '/#/floorplan?b=BA&fac=ba-washroom-1108&from=r%3A2179&f=2&resume=1');
+  await start.waitFor();
+  assert.match(await start.getAttribute('href'), /via=elevator/);
+  await page.goto(base + '/#/preview?b=BA&r=2179&stepfree=1');
+  await page.locator('#route-elevator[aria-pressed="true"]').waitFor();
+  const indoor = page.getByRole('link', { name: 'Start indoor directions', exact: true });
+  assert.match(await indoor.getAttribute('href'), /stepfree=1/);
+  assert.doesNotMatch(await indoor.getAttribute('href'), /via=stairs/);
+  await indoor.click();
+  await page.getByRole('heading', { name: /^Step 1 of / }).waitFor();
+  assert.equal(await page.getByRole('link', { name: /^Switch to / }).count(), 0);
+  await context.close();
+});
 test('a facility preview preserves the selected Bahen room and omits outdoor directions', async () => {
-  const { page, context, mapsRequests } = await open('#/preview?b=BA&fac=ba-washrooms-south-2&from=r%3A2179');
+  const { page, context, mapsRequests } = await open('#/preview?b=BA&fac=ba-washrooms-south-2&from=r%3A2179&via=elevator');
   const start = page.getByRole('link', { name: /start indoor directions/i });
   await start.waitFor();
   assert.ok(await page.getByText(/starting from .*2179/i).isVisible());
@@ -243,7 +298,12 @@ test('a facility preview preserves the selected Bahen room and omits outdoor dir
   assert.equal(route.get('from'), 'r:2179');
   assert.equal(route.get('fac'), 'ba-washrooms-south-2');
   assert.equal((await queryOf(page.getByRole('link', { name: /show floor plan/i }))).get('f'), '2');
-  assert.equal((await queryOf(page.getByRole('link', { name: /back to facilities/i }))).get('r'), '2179');
+  const back = await queryOf(page.getByRole('link', { name: /back to facilities/i }));
+  assert.equal(back.get('r'), '2179');
+  assert.equal(back.get('via'), 'elevator');
+  await start.click();
+  await page.getByRole('heading', { name: /^Step 1 of / }).waitFor();
+  assert.equal(await page.getByRole('link', { name: /^Switch to / }).count(), 0);
   await context.close();
 });
 

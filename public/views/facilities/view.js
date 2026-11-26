@@ -47,21 +47,19 @@ function shortName(name) {
 export function render(root, params, nav) {
   const anchor = resolveAnchor(params);
   const stepfree = params.stepfree === '1' ? '1' : undefined;
-  const via = anchor.b === 'BA' && !stepfree && params.via === 'stairs' ? 'stairs' : undefined;
+  const via = anchor.b === 'BA' && !stepfree && ['stairs', 'elevator'].includes(params.via) ? params.via : undefined;
   const here = { ...anchorParams(anchor), stepfree, via };
   const link = (extra) => nav.href('facilities', { ...here, type: params.type, ...extra });
 
   if (anchor.error) { anchorError(root, anchor, params, nav, stepfree, via); return; }
   if (params.pick === '1') { picker(root, anchor, params, nav, stepfree, via); return; }
 
-  // "Nearest to what?" card, shown on every screen below.
   const where = h('div', { class: 'card anchor' },
-    h('div', { class: 'grow' },
-      h('span', { class: 'muted small' }, 'Near'),
-      h('strong', { class: 'block' }, anchor.label),
+    h('a', { class: 'btn btn-primary', href: link({ pick: '1', id: params.id }) }, 'Choose starting point'),
+    h('div', null,
+      h('p', null, 'Starting from: ', h('strong', null, anchor.label)),
       anchor.kind === 'building' ? null
-        : h('span', { class: 'muted small block' }, [shortName(anchor.buildingName), anchor.kind === 'entrance' ? anchor.detail : null].filter(Boolean).join(' · '))),
-    h('a', { class: 'btn btn-small', href: link({ pick: '1', id: params.id }), 'aria-label': `Change where you are (now ${anchor.label})` }, 'Change'));
+        : h('p', { class: 'muted small' }, [shortName(anchor.buildingName), anchor.kind === 'entrance' ? anchor.detail : null].filter(Boolean).join(' · '))));
 
   if (!params.type) {
     const types = anchor.b === 'BA'
@@ -193,7 +191,7 @@ function anchorError(root, anchor, params, nav, stepfree, via) {
     backLink(nav.href('facilities', { b, stepfree, via, type: params.type }), 'Back'),
     h('h1', null, 'Where are you?'),
     h('p', { class: 'notice' }, `${ERRORS[anchor.error](anchor)} Pick where you are instead.`),
-    h('a', { class: 'btn btn-primary', href: nav.href('facilities', { b, stepfree, via, type: params.type, pick: '1' }) }, 'Choose where you are'),
+    h('a', { class: 'btn btn-primary', href: nav.href('facilities', { b, stepfree, via, type: params.type, pick: '1' }) }, 'Choose starting point'),
   );
 }
 

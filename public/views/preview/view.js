@@ -6,7 +6,7 @@
 //      #/preview?b=OI&fac=f1                  a facility (same map)
 //      #/preview?b=BA                         just the building
 //      add &from=r:2179 or &from=f:2 for an indoor Bahen start,
-//      &via=stairs for the stair route, or &sim=1 for the location simulator
+//      &via=stairs or &via=elevator, or &sim=1 for the location simulator
 // Out: #/floorplan?b&f&r  ·  #/navigate?b&r&stepfree&step=1 (keeps from/via)
 //
 // The outdoor part lives in map.js (UI), outdoor.js (tested logic) and
@@ -68,11 +68,13 @@ function fill(body, building, params, nav) {
   const destination = facility || room;
   const destinationId = facility?.id || room?.number;
   const stairsRoute = isBahen && destinationId && getRoute(building.code, destinationId, 'stairs', from);
+  const elevatorRoute = destinationId && getRoute(building.code, destinationId, stepFree ? 'stepfree' : 'standard', from);
   const offersStairs = Boolean(stairsRoute?.usesStairs);
-  const usingStairs = offersStairs && !stepFree && params.via === 'stairs';
-  const via = usingStairs ? 'stairs' : undefined;
-  const route = usingStairs ? stairsRoute
-    : destinationId && getRoute(building.code, destinationId, stepFree ? 'stepfree' : 'standard', from);
+  const offersChoice = offersStairs && Boolean(elevatorRoute);
+  const usingStairs = offersStairs && !stepFree && (params.via !== 'elevator' || !elevatorRoute);
+  const via = usingStairs ? 'stairs' : offersChoice ? 'elevator' : undefined;
+  const returnMode = via ?? (isBahen && !stepFree && ['stairs', 'elevator'].includes(params.via) ? params.via : undefined);
+  const route = usingStairs ? stairsRoute : elevatorRoute;
   const stairSigns = usingStairs && route.stairStops?.join(' → ');
   const stairAccess = 'Check stairwell access and floor re-entry on site.';
   const stairNote = stairSigns ? `Stair signs ${stairSigns}. ${stairAccess}` : stairAccess;
@@ -105,10 +107,10 @@ function fill(body, building, params, nav) {
   const stepFreeBox = h('div', { class: `card stepfree-info${stepFree ? ' is-on' : ''}`, 'aria-live': 'polite' });
   const icon = () => h('span', { 'aria-hidden': 'true' }, '♿ ');
   const go = (preferences, keepFocus) => nav.go('preview', keep(preferences), { keepFocus });
-  const routeType = offersStairs
+  const routeType = offersChoice
     ? h('div', { class: 'route-type', role: 'group', 'aria-label': 'Route type' },
       h('button', { type: 'button', id: 'route-elevator', class: 'chip', 'aria-pressed': String(!usingStairs),
-        onclick: () => usingStairs && go({}, 'route-elevator') }, 'Elevator'),
+        onclick: () => usingStairs && go({ via: 'elevator' }, 'route-elevator') }, 'Elevator'),
       h('button', { type: 'button', id: 'route-stairs', class: 'chip', 'aria-pressed': String(usingStairs),
         onclick: () => !usingStairs && go({ via: 'stairs' }, 'route-stairs') }, 'Stairs'))
     : !from ? h('div', { class: 'route-type', role: 'group', 'aria-label': 'Route type' },
@@ -129,7 +131,7 @@ function fill(body, building, params, nav) {
   append(body,
     facility
       ? backLink(nav.href('facilities', { type: facility.type, b: building.code, id: facility.id, r: originRoom?.number,
-        f: originFloor, via, stepfree: stepFree ? '1' : undefined }), 'Back to facilities')
+        f: originFloor, via: returnMode, stepfree: stepFree ? '1' : undefined }), 'Back to facilities')
       : backLink(nav.href('search', { b: building.code, r: room?.number }), room ? 'Change room' : 'Back'),
     h('div', null, h('h1', null, heading), sub ? h('p', { class: 'muted' }, sub) : null),
     from && route?.startLabel ? h('p', { class: 'muted' }, `Starting from ${route.startLabel}`) : null,

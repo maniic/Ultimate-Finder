@@ -38,9 +38,15 @@ export function render(root, params, nav) {
   const items = FLOORS[building.code][floor];
 
   const background = getBahenBackground(building.code, floor);
-  const variant = params.stepfree === '1' ? 'stepfree' : params.via === 'stairs' ? 'stairs' : 'standard';
-  const route = destinationId && getRoute(building.code, destinationId, variant, params.from);
   const resume = Number(params.resume);
+  const stepFree = params.stepfree === '1';
+  const savedMode = params.via ?? (building.code === 'BA' && Number.isInteger(resume) && resume >= 1 ? 'elevator' : undefined);
+  const defaultStairs = building.code === 'BA' && destinationId && !stepFree && !savedMode
+    && getRoute(building.code, destinationId, 'stairs', params.from);
+  const via = defaultStairs?.usesStairs ? 'stairs' : savedMode;
+  const variant = stepFree ? 'stepfree' : via === 'stairs' ? 'stairs' : 'standard';
+  const route = defaultStairs?.usesStairs ? defaultStairs
+    : destinationId && getRoute(building.code, destinationId, variant, params.from);
   const routeStep = facility && route && Number.isInteger(resume) && resume > 1 && resume <= route.steps.length ? resume : 1;
   let path;
   const target = room && room.floor === floor && items.find((i) => i.id === room.number);
@@ -53,7 +59,7 @@ export function render(root, params, nav) {
   }
 
   const keep = { b: building.code, r: room?.number, fac: facility?.id, stepfree: params.stepfree,
-    from: params.from, via: params.via };
+    from: params.from, via };
   const infoText = facility
     ? (facility.floor === floor ? facility.near : `${facility.label || facilityTypeName(facility.type)} is on floor ${facility.floor}.`)
     : room ? (room.floor === floor ? `${room.number} is highlighted.` : `${room.number} is on floor ${room.floor}.`) : 'Tap a room or facility.';
