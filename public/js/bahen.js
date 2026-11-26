@@ -1,4 +1,5 @@
 import { BAHEN_FACILITY_PLANS } from './bahen-facilities.js';
+import { BAHEN_STAIR_LANDINGS, buildBahenRouting } from './bahen-routing.js';
 
 // Geometry was traced from the U of T ECE plans in the team's atlas.
 // Positions below use the original 1500 × 1160 image coordinates.
@@ -46,6 +47,11 @@ export const BAHEN_FLOORS = Object.fromEntries([1, 2, 3].map((floor) => {
   const items = [
     ...rooms.map(({ number, bounds }) => mapItem(number, `BA${number}`, 'room', bounds)),
     mapItem('elev-east', 'East elevators', 'elevator', liftBounds[floor]),
+    ...BAHEN_STAIR_LANDINGS.filter((landing) => landing.floor === floor).map(({ id, at, to }) => ({
+      ...mapItem(`stairs-${id}-to-${to}`, id, 'stairs', [at[0] - 7, at[1] - 7, 14, 14]),
+      name: `Stairs ${id} · ${to > floor ? 'up' : 'down'} to floor ${to}`,
+      at: point(at),
+    })),
     ...BAHEN_FACILITIES.filter((facility) => facility.floor === floor).map((facility) => ({
       id: facility.id, label: facility.mapLabel, name: facility.label,
       kind: facility.type === 'washroom' ? 'washroom' : 'facility',
@@ -126,7 +132,11 @@ const facilityRoutes = BAHEN_FACILITY_PLANS.filter((facility) => facility.steps)
   ],
 ]);
 
-export const BAHEN_ROUTES = Object.fromEntries([...Object.entries(routes), ...facilityRoutes].map(([number, steps]) => {
+const traces = [...Object.entries(routes), ...facilityRoutes];
+
+export const BAHEN_ROUTES = Object.fromEntries(traces.map(([number, steps]) => {
   const route = { entrance: 'M', steps };
   return [`BA:${number}`, { standard: route, stepfree: route }];
 }));
+
+export const getBahenRoute = buildBahenRouting(traces, BAHEN_ROOMS);

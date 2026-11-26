@@ -1,5 +1,19 @@
 # AI_HANDOFF.md — living work log for Ultimate Finder
 
+## Team review — Bahen indoor directions (2026-11-26)
+
+- The preview puts Start indoor directions and the floor plan before the map
+  to the building. Exterior directions remain available below.
+- A Bahen facility route carries the selected room or floor into preview,
+  navigation and the floor plan. A fixture with only a map pin remains map-only.
+- Cross-floor routes offer stairs or the east elevators. The usual stairs
+  use 1200S to 2290S, then the short hall to the curved 2200S to 3200S
+  flight. The shorter option for the north corridor uses 1135S, 2130S
+  and 3130S. A teammate confirmed the floor connections and public
+  hallways. Use the on-site pilot to check signs, landings and instructions.
+- Review branch: `fix/bahen-indoor-wayfinding`, based on the PR #17 merge.
+  Teammate review and an on-site walkthrough are still pending.
+
 > **Protocol:** Read this file in full at the start of every session. Update it
 > at the end of every working pass: move finished items, record decisions with
 > their why, keep "Next up" honest. Record the current state, not a transcript.

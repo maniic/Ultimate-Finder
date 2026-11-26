@@ -1,13 +1,13 @@
 // Owner: Abdullah
-// VIEW: Route preview. Walking directions to the building entrance (live
-// Google map), plus best entrance, walk time, floor and the route type
-// (Standard / Step-free), with a box saying what each choice uses and avoids.
+// VIEW: Route preview. Indoor actions and route type first, then walking
+// directions to the entrance (live Google map) for people outside.
 // Prototype Fig. 2c.
 // In:  #/preview?b=OI&r=10-210[&stepfree=1]   a room
 //      #/preview?b=OI&fac=f1                  a facility (same map)
 //      #/preview?b=BA                         just the building
-//      add &sim=1 for the facilitator location simulator (usability tests)
-// Out: #/floorplan?b&f&r  ·  #/navigate?b&r&stepfree&step=1
+//      add &from=r:2179 or &from=f:2 for an indoor Bahen start,
+//      &via=stairs for the stair route, or &sim=1 for the location simulator
+// Out: #/floorplan?b&f&r  ·  #/navigate?b&r&stepfree&step=1 (keeps from/via)
 //
 // The outdoor part lives in map.js (UI), outdoor.js (tested logic) and
 // places.js (entrance coordinates). Nothing is specific to one building:
@@ -57,14 +57,27 @@ function notFound(body, nav) {
 }
 
 function fill(body, building, params, nav) {
+  const isBahen = building.code === 'BA';
   const stepFree = params.stepfree === '1';
   const sim = params.sim === '1';
+  const from = isBahen && params.from ? params.from : undefined;
+  const originRoom = from?.startsWith('r:') ? getRoom(building.code, from.slice(2)) : undefined;
+  const originFloor = /^f:[1-3]$/.test(from) ? from.slice(2) : undefined;
   const facility = getFacility(building.code, params.fac);
   const room = !params.fac && params.r ? getRoom(building.code, params.r) : null;
   const destination = facility || room;
-  const route = destination && getRoute(building.code, facility?.id || room?.number, stepFree ? 'stepfree' : 'standard');
+  const destinationId = facility?.id || room?.number;
+  const stairsRoute = isBahen && destinationId && getRoute(building.code, destinationId, 'stairs', from);
+  const offersStairs = Boolean(stairsRoute?.usesStairs);
+  const usingStairs = offersStairs && !stepFree && params.via === 'stairs';
+  const via = usingStairs ? 'stairs' : undefined;
+  const route = usingStairs ? stairsRoute
+    : destinationId && getRoute(building.code, destinationId, stepFree ? 'stepfree' : 'standard', from);
+  const stairSigns = usingStairs && route.stairStops?.join(' → ');
+  const stairAccess = 'Check stairwell access and floor re-entry on site.';
+  const stairNote = stairSigns ? `Stair signs ${stairSigns}. ${stairAccess}` : stairAccess;
   const hasPlan = destination && Object.hasOwn(FLOORS[building.code] || {}, destination.floor);
-  const indoorParams = { b: building.code, r: room?.number, fac: facility?.id, stepfree: stepFree ? '1' : undefined };
+  const indoorParams = { b: building.code, r: room?.number, fac: facility?.id, from, via, stepfree: stepFree ? '1' : undefined };
   const routeEntrance = route && getEntrance(building.code, route.entrance);
   const hasIndoorData = (ROOMS[building.code] || []).length > 0;
 
@@ -79,7 +92,7 @@ function fill(body, building, params, nav) {
 
   const entrances = entrancesFor(building.code, ENTRANCES, PLACES);
   const dest = chooseDestination(entrances, { routeEntranceId: route?.entrance, stepFree });
-  const keep = (extra) => ({ b: building.code, r: params.r, fac: params.fac, sim: sim ? '1' : undefined, ...extra });
+  const keep = (extra) => ({ b: building.code, r: params.r, fac: params.fac, from, sim: sim ? '1' : undefined, ...extra });
 
   // Heading
   let heading; let sub = building.name;
@@ -89,21 +102,56 @@ function fill(body, building, params, nav) {
   } else if (params.r) heading = `${building.code} ${params.r}`;
   else { heading = building.name; sub = null; }
 
-  // Where "You're here" leads once outside the door
-  let arrival = null;
-  if (route) arrival = { href: nav.href('navigate', { ...indoorParams, step: 1 }), label: 'Continue inside' };
-  else if (facility && hasPlan) arrival = { href: nav.href('floorplan', { ...indoorParams, f: facility.floor }), label: 'Continue inside' };
+  const stepFreeBox = h('div', { class: `card stepfree-info${stepFree ? ' is-on' : ''}`, 'aria-live': 'polite' });
+  const icon = () => h('span', { 'aria-hidden': 'true' }, '♿ ');
+  const go = (preferences, keepFocus) => nav.go('preview', keep(preferences), { keepFocus });
+  const routeType = offersStairs
+    ? h('div', { class: 'route-type', role: 'group', 'aria-label': 'Route type' },
+      h('button', { type: 'button', id: 'route-elevator', class: 'chip', 'aria-pressed': String(!usingStairs),
+        onclick: () => usingStairs && go({}, 'route-elevator') }, 'Elevator'),
+      h('button', { type: 'button', id: 'route-stairs', class: 'chip', 'aria-pressed': String(usingStairs),
+        onclick: () => !usingStairs && go({ via: 'stairs' }, 'route-stairs') }, 'Stairs'))
+    : !from ? h('div', { class: 'route-type', role: 'group', 'aria-label': 'Route type' },
+      h('button', { type: 'button', id: 'route-standard', class: 'chip', 'aria-pressed': String(!stepFree),
+        onclick: () => stepFree && go({}, 'route-standard') }, 'Standard'),
+      h('button', { type: 'button', id: 'stepfree', class: 'chip', 'aria-pressed': String(stepFree),
+        onclick: () => !stepFree && go({ stepfree: '1' }, 'stepfree') }, icon(), 'Step-free')) : null;
+  const showFloor = from ? route?.steps[0]?.floor ?? destination?.floor : destination?.floor;
+  const startHref = route && nav.href('navigate', { ...indoorParams, step: 1 });
+  const planHref = hasPlan && nav.href('floorplan', { ...indoorParams, f: showFloor });
+  const indoorActions = (startHref || planHref) ? h('div', { class: 'btn-row' },
+    startHref ? h('a', { class: 'btn btn-primary', href: startHref }, 'Start indoor directions') : null,
+    planHref ? h('a', { class: 'btn', href: planHref }, 'Show floor plan') : null) : null;
+  const facilityNote = facility?.approximate ? h('p', { class: 'muted small' }, 'The pin shows the general area. Check nearby signs for the exact location.') : null;
 
+  append(body,
+    facility
+      ? backLink(nav.href('facilities', { type: facility.type, b: building.code, id: facility.id, r: originRoom?.number,
+        f: originFloor, via, stepfree: stepFree ? '1' : undefined }), 'Back to facilities')
+      : backLink(nav.href('search', { b: building.code, r: room?.number }), room ? 'Change room' : 'Back'),
+    h('div', null, h('h1', null, heading), sub ? h('p', { class: 'muted' }, sub) : null),
+    from && route?.startLabel ? h('p', { class: 'muted' }, `Starting from ${route.startLabel}`) : null,
+    routeType,
+    indoorActions);
+
+  if (from) {
+    append(body,
+      route ? h('p', { class: 'muted small' }, usingStairs
+        ? stairNote
+        : 'These directions follow the floor plans. Check doors and elevator access on site.')
+        : h('p', { class: 'notice small' }, "Indoor directions from this starting point aren't available."),
+      facilityNote);
+    return;
+  }
+
+  // Where "You're here" leads once outside the door.
+  const arrivalHref = startHref || (facility && planHref);
+  const arrival = arrivalHref ? { href: arrivalHref, label: 'Continue inside' } : null;
   const walkDd = h('dd', null, '–');
-  // The entrance can change once a start point is known (nearest one), so
-  // these are updated from the map's onRoute.
   const shown = routeEntrance || dest;
   const entranceDd = h('dd', null, shown ? shown.name : '–');
   const entranceNote = h('p', { class: 'small' });
-  // Step-free explanation (A2 finding: people couldn't tell what it does or
-  // whether it was on). Rebuilt whenever the chosen entrance changes.
-  const stepFreeBox = h('div', { class: `card stepfree-info${stepFree ? ' is-on' : ''}`, 'aria-live': 'polite' });
-  const icon = () => h('span', { 'aria-hidden': 'true' }, '♿ ');
+  // Rebuild the route explanation only when the mapped entrance changes.
   let explainedFor; // entrance id the box was last built for
   function showEntrance(e) {
     if (!e) return;
@@ -121,13 +169,13 @@ function fill(body, building, params, nav) {
     explainedFor = id;
     const info = stepFreeInfo(entrances, e);
     const named = (x) => `${x.name}${x.note ? `, ${x.note.toLowerCase()}` : ''}`;
-    if (building.code === 'BA') {
+    if (isBahen) {
       stepFreeBox.replaceChildren();
       append(stepFreeBox,
-        h('strong', null, stepFree ? 'Step-free access unverified' : 'Standard route'),
-        h('p', { class: 'small' }, route
-          ? 'The indoor paths follow corridors and use elevators for floor changes. Check entrance, door and elevator access on site.'
-          : 'Check entrance and elevator access on site.'));
+        h('strong', null, usingStairs ? 'Stairs route' : offersStairs ? 'Elevator route' : stepFree ? 'Step-free access unverified' : 'Standard route'),
+        h('p', { class: 'small' }, usingStairs
+          ? stairNote
+          : 'Check entrance, door and elevator access on site.'));
       return;
     }
     if (stepFree) {
@@ -157,17 +205,7 @@ function fill(body, building, params, nav) {
   }
   if (shown) showEntrance(shown); else explainStepFree(null);
 
-  const go = (on) => nav.go('preview', keep({ stepfree: on ? '1' : undefined }), { keepFocus: on ? 'stepfree' : 'route-standard' });
-  const routeType = h('div', { class: 'route-type', role: 'group', 'aria-label': 'Route type' },
-    h('button', { type: 'button', id: 'route-standard', class: 'chip', 'aria-pressed': stepFree ? 'false' : 'true', onclick: () => stepFree && go(false) }, 'Standard'),
-    h('button', { type: 'button', id: 'stepfree', class: 'chip', 'aria-pressed': stepFree ? 'true' : 'false', onclick: () => !stepFree && go(true) }, icon(), 'Step-free'));
-
   append(body,
-    facility
-      ? backLink(nav.href('facilities', { type: facility.type, b: building.code, id: facility.id, stepfree: stepFree ? '1' : undefined }), 'Back to facilities')
-      : backLink(nav.href('search', { b: building.code, r: room ? room.number : undefined }), room ? 'Change room' : 'Back'),
-    h('div', null, h('h1', null, heading), sub ? h('p', { class: 'muted' }, sub) : null),
-    routeType,
     stepFreeBox,
     dest
       ? outdoorMap({ entrances, routeEntranceId: route?.entrance, stepFree, sim, arrival,
@@ -186,9 +224,6 @@ function fill(body, building, params, nav) {
     dest && (!hasIndoorData || (room && !route)) ? h('p', { class: 'notice small' }, room
       ? `Indoor directions to ${building.code} ${room.number} aren't ready yet, so this gets you to the entrance.`
       : `Indoor directions for ${building.name} aren't ready yet, so this gets you to the entrance.`) : null,
-    facility?.approximate ? h('p', { class: 'muted small' }, 'The pin shows the general area. Check nearby signs for the exact location.') : null,
-    (route || (facility && hasPlan)) ? h('div', { class: 'btn-row' },
-      hasPlan ? h('a', { class: 'btn', href: nav.href('floorplan', { ...indoorParams, f: destination.floor }) }, 'Show floor plan') : null,
-      route ? h('a', { class: 'btn btn-primary', href: nav.href('navigate', { ...indoorParams, step: 1 }) }, 'Start route') : null) : null,
+    facilityNote,
   );
 }

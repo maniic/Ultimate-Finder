@@ -67,7 +67,7 @@ export function findRoomSign(building, typed) {
 // or a route that already avoids it, keeps avoiding it.
 export function pickVariant(params) {
   if (params.why === 'blocked' || params.alt === 'blockedElevator') return 'blockedElevator';
-  return params.stepfree === '1' ? 'stepfree' : 'standard';
+  return params.stepfree === '1' ? 'stepfree' : params.via === 'stairs' ? 'stairs' : 'standard';
 }
 
 const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
@@ -76,8 +76,8 @@ const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 // The steps on the spot's floor form a line; find the nearest piece of it.
 // If they're before the start of that piece, continue at its start,
 // otherwise at its end (the next thing ahead of them).
-export function rejoin(building, roomNumber, spot, variant) {
-  const route = getRoute(code(building), roomNumber, variant);
+export function rejoin(building, roomNumber, spot, variant, from) {
+  const route = getRoute(code(building), roomNumber, variant, from);
   if (!route || !spot) return undefined;
   if (spot.room && spot.room === roomNumber) return { arrived: true, variant, floor: spot.floor };
 

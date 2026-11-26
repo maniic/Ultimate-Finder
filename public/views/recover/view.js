@@ -31,7 +31,8 @@ export function render(root, params, nav) {
   const n = Math.min(Math.max(parseInt(params.step, 10) || 1, 1), 50);
   const alt = params.alt === 'blockedElevator' ? params.alt : undefined;
   const why = params.why === 'blocked' ? 'blocked' : 'lost';
-  const routeParams = { b: building.code, r: room.number, stepfree: params.stepfree === '1' ? '1' : undefined, alt };
+  const routeParams = { b: building.code, r: room.number, stepfree: params.stepfree === '1' ? '1' : undefined,
+    from: params.from, via: params.via, alt };
   const here = (extra = {}) => nav.href('recover', { ...routeParams, step: n, why, ...extra });
   const floors = Object.keys(FLOORS[building.code] || {}).map(Number).sort((a, b) => a - b);
   const ctx = { building, room, n, why, routeParams, here, floors, nav };
@@ -62,7 +63,9 @@ function renderWhere(root, params, { building, why, here, floors, routeParams, n
     backLink(here(), 'Back'),
     h('h1', null, 'Where are you now?'),
     why === 'blocked'
-      ? h('p', { class: 'notice small' }, "We'll route you around the blocked elevator. First, tell us where you are.")
+      ? h('p', { class: 'notice small' }, building.code === 'BA'
+        ? 'Check signs or ask building staff if a stairwell or elevator is blocked. The map can help you identify where you are.'
+        : "We'll route you around the blocked elevator. First, tell us where you are.")
       : null,
     h('p', { class: 'muted' }, 'Tap something you can see right now: a sign, an elevator, a room number.'),
     h('a', { class: 'btn btn-primary unsure', href: here({ stage: 'unsure' }) }, "I'm not sure where I am"),
@@ -130,7 +133,7 @@ function renderHere(root, params, { building, room, why, here, routeParams, nav 
     return;
   }
   const variant = pickVariant({ ...params, why });
-  const r = rejoin(building.code, room.number, spot, variant);
+  const r = rejoin(building.code, room.number, spot, variant, params.from);
   const plan = drawPlan(FLOORS[building.code]?.[spot.floor], {
     highlight: r?.arrived ? room.number : spot.id, path: r?.path, marker: spot.at,
     background: getBahenBackground(building.code, spot.floor),
@@ -149,7 +152,7 @@ function renderHere(root, params, { building, room, why, here, routeParams, nav 
     return;
   }
   if (!r) {
-    const noRoute = !getRoute(building.code, room.number, variant);
+    const noRoute = !getRoute(building.code, room.number, variant, params.from);
     append(root, back,
       h('h1', null, `You're at ${spot.name}`),
       plan,

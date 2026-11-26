@@ -12,6 +12,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { getRoute } from '../../js/data.js';
 import { PLACES } from './places.js';
 
 const PUBLIC = fileURLToPath(new URL('../../', import.meta.url));
@@ -189,13 +190,66 @@ test('step-free on: routes to the step-free entrance', async () => {
 test('a Bahen room gets walking directions to its entrance and indoor steps', async () => {
   const { page, context, errors } = await open('#/preview?b=BA&r=1170', { geo: 'granted' });
   await page.getByRole('heading', { name: 'BA 1170' }).waitFor();
-  await page.getByRole('link', { name: /start route/i }).waitFor();
+  const start = page.getByRole('link', { name: /start indoor directions/i });
+  await start.waitFor();
+  const mapTop = (await page.locator('.outdoor').boundingBox()).y;
+  assert.ok((await start.boundingBox()).y < mapTop);
+  assert.ok((await page.getByRole('link', { name: /show floor plan/i }).boundingBox()).y < mapTop);
   assert.equal(await page.getByText(/indoor directions .* aren.t ready/i).count(), 0);
   await page.getByRole('button', { name: /directions from my location/i }).click();
   await page.getByText('640 m').waitFor();
   const req = (await page.evaluate(() => window.__fake.routeRequests))[0];
   assert.equal(`${req.destination.lat},${req.destination.lng}`, pin('BA', 'M'));
   assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test('a cross-floor Bahen room switches between the elevator and stairs', async () => {
+  const { page, context } = await open('#/preview?b=BA&r=2179');
+  const elevator = page.getByRole('button', { name: 'Elevator', exact: true });
+  const stairs = page.getByRole('button', { name: 'Stairs', exact: true });
+  const start = page.getByRole('link', { name: /start indoor directions/i });
+  await elevator.waitFor();
+  assert.equal(await elevator.getAttribute('aria-pressed'), 'true');
+  assert.doesNotMatch(await start.getAttribute('href'), /via=stairs/);
+  await stairs.click();
+  await page.locator('#route-stairs[aria-pressed="true"]').waitFor();
+  assert.match(await start.getAttribute('href'), /via=stairs/);
+  assert.match(await page.getByRole('link', { name: /show floor plan/i }).getAttribute('href'), /via=stairs/);
+  const stairSigns = getRoute('BA', '2179', 'stairs').stairStops;
+  assert.ok(stairSigns.length >= 2, 'the route identifies the entry and exit signs');
+  const notice = page.locator('.stepfree-info');
+  assert.ok((await notice.innerText()).includes(stairSigns.join(' → ')));
+  assert.ok(await notice.getByText(/check stairwell access and floor re-entry on site/i).isVisible());
+  await elevator.click();
+  await page.locator('#route-elevator[aria-pressed="true"]').waitFor();
+  assert.doesNotMatch(await start.getAttribute('href'), /via=stairs/);
+  await context.close();
+});
+
+test('a facility preview preserves the selected Bahen room and omits outdoor directions', async () => {
+  const { page, context, mapsRequests } = await open('#/preview?b=BA&fac=ba-washrooms-south-2&from=r%3A2179');
+  const start = page.getByRole('link', { name: /start indoor directions/i });
+  await start.waitFor();
+  assert.ok(await page.getByText(/starting from .*2179/i).isVisible());
+  assert.equal(await page.locator('.outdoor').count(), 0);
+  assert.equal(mapsRequests(), 0);
+  const queryOf = async (link) => new URLSearchParams((await link.getAttribute('href')).split('?')[1]);
+  const route = await queryOf(start);
+  assert.equal(route.get('from'), 'r:2179');
+  assert.equal(route.get('fac'), 'ba-washrooms-south-2');
+  assert.equal((await queryOf(page.getByRole('link', { name: /show floor plan/i }))).get('f'), '2');
+  assert.equal((await queryOf(page.getByRole('link', { name: /back to facilities/i }))).get('r'), '2179');
+  await context.close();
+});
+
+test('an unknown indoor start offers a map without silently routing from the entrance', async () => {
+  const { page, context, mapsRequests } = await open('#/preview?b=BA&fac=ba-washrooms-south-2&from=r%3A9999');
+  await page.getByText(/indoor directions from this starting point aren.t available/i).waitFor();
+  assert.equal(await page.getByRole('link', { name: /start indoor directions/i }).count(), 0);
+  assert.ok(await page.getByRole('link', { name: /show floor plan/i }).isVisible());
+  assert.equal(await page.locator('.outdoor').count(), 0);
+  assert.equal(mapsRequests(), 0);
   await context.close();
 });
 
@@ -324,7 +378,7 @@ test('a known room without indoor steps says indoor directions are not ready', a
   const { page, context } = await open('#/preview?b=OI&r=10-200');
   await page.locator('[data-fake-map]').waitFor();
   await page.getByText(/indoor directions .* aren.t ready/i).waitFor();
-  assert.equal(await page.getByRole('link', { name: /start route/i }).count(), 0);
+  assert.equal(await page.getByRole('link', { name: /start indoor directions/i }).count(), 0);
   await context.close();
 });
 
