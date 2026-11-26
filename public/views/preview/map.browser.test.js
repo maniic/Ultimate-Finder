@@ -197,6 +197,8 @@ test('a Bahen room gets walking directions to its entrance and indoor steps', as
   const summaryBottom = summary.y + summary.height;
   assert.ok((await start.boundingBox()).y > summaryBottom);
   assert.ok((await page.getByRole('link', { name: /show floor plan/i }).boundingBox()).y > summaryBottom);
+  // ...and docked to the bottom edge, so they're on screen without scrolling.
+  assert.ok(await start.evaluate((el) => el.getBoundingClientRect().bottom <= innerHeight));
   assert.equal(await page.getByText(/indoor directions .* aren.t ready/i).count(), 0);
   await page.getByRole('button', { name: /directions from my location/i }).click();
   await page.getByText('640 m').waitFor();

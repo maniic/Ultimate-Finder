@@ -79,3 +79,12 @@ body.map-open { overflow: hidden; }
 .view-preview .stepfree-info.is-on ul { gap: 0; }
 .view-preview .outdoor > p { font-size: 0.85rem; }
 .view-preview .map { aspect-ratio: 9 / 4; }
+
+/* Start indoor directions stays at the end of the page (like a map app's
+   Start button) but is docked to the bottom edge, so it's always on screen. */
+.view-preview .indoor-actions.is-docked {
+  position: sticky; bottom: 0; z-index: 2;
+  margin: 0 calc(-1 * var(--gap)) -10px; padding: 10px var(--gap) calc(10px + env(safe-area-inset-bottom));
+  background: var(--bg); border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 12px rgb(0 0 0 / 0.08);
+}

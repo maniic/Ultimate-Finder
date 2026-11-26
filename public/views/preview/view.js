@@ -119,7 +119,9 @@ function fill(body, building, params, nav) {
   const showFloor = from ? route?.steps[0]?.floor ?? destination?.floor : destination?.floor;
   const startHref = route && nav.href('navigate', { ...indoorParams, step: 1 });
   const planHref = hasPlan && nav.href('floorplan', { ...indoorParams, f: showFloor });
-  const indoorActions = (startHref || planHref) ? h('div', { class: 'btn-row' },
+  // Without an indoor start the actions sit at the end of the page, docked to
+  // the bottom of the screen so they're visible without scrolling.
+  const indoorActions = (startHref || planHref) ? h('div', { class: `btn-row indoor-actions${from ? '' : ' is-docked'}` },
     startHref ? h('a', { class: 'btn btn-primary', href: startHref }, 'Start indoor directions') : null,
     planHref ? h('a', { class: 'btn', href: planHref }, 'Show floor plan') : null) : null;
   const facilityNote = facility?.approximate ? h('p', { class: 'muted small' }, 'The pin shows the general area. Check nearby signs for the exact location.') : null;
