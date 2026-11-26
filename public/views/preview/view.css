@@ -44,3 +44,43 @@ body.map-open { overflow: hidden; }
 .view-preview .stepfree-info p { margin: 0; }
 .view-preview .stepfree-info .warn { color: var(--warn); font-weight: 600; }
 .view-preview .badge-stepfree { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 999px; background: var(--ok); color: #fff; font-size: 0.75rem; font-weight: 700; }
+
+/* ---- compact layout: the whole preview fits one phone screen ---- */
+/* --dock-pad is shared by the view's bottom padding and the docked bar's
+   negative margin below, so the bar sits flush with the bottom edge. */
+.view-preview { --dock-pad: 10px; padding-top: 10px; padding-bottom: var(--dock-pad); }
+.view-preview .preview-body { gap: 10px; }
+.view-preview .preview-body h1 { margin: 0; font-size: 1.35rem; }
+.view-preview .preview-body h1 + p { margin: 0; font-size: 0.9rem; }
+.view-preview .preview-body > .card { padding: 10px 12px; gap: 6px; }
+.view-preview .route-type .chip { padding: 8px; }
+.view-preview .stepfree-info { font-size: 0.875rem; }
+.view-preview .stepfree-info strong { font-size: 0.95rem; }
+.view-preview .stepfree-info:not(.is-on) { display: block; }
+.view-preview .stepfree-info:not(.is-on) strong::after { content: " · "; font-weight: 400; }
+.view-preview .stepfree-info:not(.is-on) p { display: inline; }
+.view-preview .stepfree-info.is-on { font-size: 0.85rem; gap: 2px; }
+.view-preview .stepfree-info.is-on ul { gap: 0; }
+.view-preview .map { aspect-ratio: 9 / 4; }
+.view-preview .outdoor { gap: 8px; }
+.view-preview .map-status { font-size: 0.9rem; }
+.view-preview .outdoor > p { font-size: 0.85rem; }
+.view-preview .outdoor .btn { padding-top: 8px; padding-bottom: 8px; }
+.view-preview .map-start { flex-direction: row; align-items: center; gap: 8px; white-space: nowrap; }
+.view-preview .map-start select { flex: 1; min-width: 0; padding: 6px 10px; }
+.view-preview .facts { grid-template-columns: auto 1fr auto; gap: 12px; }
+.view-preview .facts dt { font-size: 0.75rem; }
+.view-preview .facts dd { font-size: 1rem; line-height: 1.25; white-space: normal; }
+.view-preview .summary p { margin: 0; font-size: 0.8rem; color: var(--muted); }
+.view-preview .preview-body > .btn-row .btn { padding: 10px; white-space: nowrap; font-size: 0.95rem; }
+.view-preview .preview-body > .btn-row .btn-primary { flex: 1.5; }
+
+/* Start indoor directions stays at the end of the page (like a map app's
+   Start button) but is docked to the bottom edge, so it's always on screen. */
+.view-preview .indoor-actions.is-docked {
+  position: sticky; bottom: 0; z-index: 2;
+  margin: 0 calc(-1 * var(--gap)) calc(-1 * var(--dock-pad));
+  padding: 10px var(--gap) calc(10px + env(safe-area-inset-bottom));
+  background: var(--bg); border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 12px rgb(0 0 0 / 0.08);
+}

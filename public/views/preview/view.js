@@ -119,7 +119,9 @@ function fill(body, building, params, nav) {
   const showFloor = from ? route?.steps[0]?.floor ?? destination?.floor : destination?.floor;
   const startHref = route && nav.href('navigate', { ...indoorParams, step: 1 });
   const planHref = hasPlan && nav.href('floorplan', { ...indoorParams, f: showFloor });
-  const indoorActions = (startHref || planHref) ? h('div', { class: 'btn-row' },
+  // Without an indoor start the actions sit at the end of the page, docked to
+  // the bottom of the screen so they're visible without scrolling.
+  const indoorActions = (startHref || planHref) ? h('div', { class: `btn-row indoor-actions${from ? '' : ' is-docked'}` },
     startHref ? h('a', { class: 'btn btn-primary', href: startHref }, 'Start indoor directions') : null,
     planHref ? h('a', { class: 'btn', href: planHref }, 'Show floor plan') : null) : null;
   const facilityNote = facility?.approximate ? h('p', { class: 'muted small' }, 'The pin shows the general area. Check nearby signs for the exact location.') : null;
@@ -157,9 +159,10 @@ function fill(body, building, params, nav) {
   function showEntrance(e) {
     if (!e) return;
     entranceDd.textContent = e.name;
-    const bits = [e.detail, e.note].filter(Boolean);
-    entranceNote.textContent = bits.length ? `${bits.join('. ')}.` : '';
-    entranceNote.hidden = !bits.length;
+    // The map already names the entrance and its address, so only the note here.
+    const note = e.note ? e.note.replace(/\.+$/, '') : '';
+    entranceNote.textContent = note ? `${note}.` : '';
+    entranceNote.hidden = !note;
     explainStepFree(e);
   }
   function explainStepFree(e) {
@@ -225,8 +228,8 @@ function fill(body, building, params, nav) {
     dest && (!hasIndoorData || (room && !route)) ? h('p', { class: 'notice small' }, room
       ? `Indoor directions to ${building.code} ${room.number} aren't ready yet, so this gets you to the entrance.`
       : `Indoor directions for ${building.name} aren't ready yet, so this gets you to the entrance.`) : null,
-    // Under the map and summary, as before: get there first, then go inside.
-    indoorActions,
     facilityNote,
+    // Last on the page (get there, then go inside), docked to the bottom edge.
+    indoorActions,
   );
 }

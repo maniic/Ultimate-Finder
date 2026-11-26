@@ -170,7 +170,7 @@ test('location denied: explains it and offers start points instead', async () =>
   await page.locator('[data-fake-map]').waitFor();
   await page.getByRole('button', { name: /directions from my location/i }).click();
   await page.getByText(/location is off/i).waitFor();
-  await page.getByLabel(/starting from/i).selectOption({ label: 'Robarts Library' });
+  await page.getByLabel(/start from/i).selectOption({ label: 'Robarts Library' });
   await page.getByText('640 m').waitFor();
   const req = (await page.evaluate(() => window.__fake.routeRequests))[0];
   assert.deepEqual(req.origin, { lat: 43.66443, lng: -79.39915 });
@@ -197,6 +197,8 @@ test('a Bahen room gets walking directions to its entrance and indoor steps', as
   const summaryBottom = summary.y + summary.height;
   assert.ok((await start.boundingBox()).y > summaryBottom);
   assert.ok((await page.getByRole('link', { name: /show floor plan/i }).boundingBox()).y > summaryBottom);
+  // ...and docked to the bottom edge, so they're on screen without scrolling.
+  assert.ok(await start.evaluate((el) => el.getBoundingClientRect().bottom <= innerHeight));
   assert.equal(await page.getByText(/indoor directions .* aren.t ready/i).count(), 0);
   await page.getByRole('button', { name: /directions from my location/i }).click();
   await page.getByText('640 m').waitFor();

@@ -89,7 +89,7 @@ export function outdoorMap(opts) {
   const startSelect = h('select', { id: 'map-start', onchange: (e) => pickStart(e.target.value) },
     h('option', { value: '' }, 'Choose a place…'),
     START_POINTS.map((p) => h('option', { value: p.id }, p.name)));
-  const startRow = h('label', { class: 'map-start small', for: 'map-start' }, "Or choose where you're starting from", startSelect);
+  const startRow = h('label', { class: 'map-start small', for: 'map-start' }, 'Or start from', startSelect);
 
   const simPanel = sim ? simulator() : null;
 
