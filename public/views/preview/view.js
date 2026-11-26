@@ -228,8 +228,8 @@ function fill(body, building, params, nav) {
     dest && (!hasIndoorData || (room && !route)) ? h('p', { class: 'notice small' }, room
       ? `Indoor directions to ${building.code} ${room.number} aren't ready yet, so this gets you to the entrance.`
       : `Indoor directions for ${building.name} aren't ready yet, so this gets you to the entrance.`) : null,
-    // Under the map and summary, as before: get there first, then go inside.
-    indoorActions,
     facilityNote,
+    // Last on the page (get there, then go inside), docked to the bottom edge.
+    indoorActions,
   );
 }
