@@ -12,7 +12,7 @@
 //  - Real photos for each step (the placeholders say what to photograph).
 
 import { h, append, photo, minutes } from '/js/ui.js';
-import { getBuilding, getFacility, getRoom, getRoute, facilityTypeName, FLOORS } from '/js/data.js';
+import { getBuilding, getEntrance, getFacility, getRoom, getRoute, facilityTypeName, FLOORS } from '/js/data.js';
 import { getBahenBackground } from '/js/bahen.js';
 import { drawPlan } from '/js/floorplan.js';
 
@@ -36,6 +36,10 @@ export function render(root, params, nav) {
   const arrived = step.arrival || n === total;
   const here = { ...params, step: undefined };
   const go = (i) => nav.href('navigate', { ...here, step: i });
+  const switchMode = !arrived && building.code === 'BA' && !params.alt && variant !== 'stepfree'
+    ? otherBahenMode(building.code, destinationId, variant, route, params.from)
+    : undefined;
+  const startLabel = route.startLabel || getEntrance(building.code, route.entrance)?.name;
 
   // Mini map: this floor, the route points on it, and where you are.
   const onFloor = route.steps.filter((s) => s.floor === step.floor).map((s) => s.at);
@@ -62,6 +66,11 @@ export function render(root, params, nav) {
       arrived
         ? h('a', { class: 'btn btn-primary', href: nav.href('search') }, 'Finish route')
         : h('a', { class: 'btn btn-primary', href: go(n + 1) }, 'Next step')),
+    switchMode ? h('div', { class: 'nav-mode-switch' },
+      h('a', { class: 'btn btn-small', href: nav.href('navigate', { ...here, via: switchMode, step: 1 }),
+        'aria-describedby': 'nav-mode-restart' }, 'Switch to ' + switchMode),
+      h('p', { id: 'nav-mode-restart', class: 'small muted' },
+        startLabel ? 'Restarts from ' + startLabel + '.' : 'Restarts from your starting point.')) : null,
     !arrived && room ? h('a', { class: 'btn mismatch', href: nav.href('recover', { ...params, step: n }) }, "This isn't what I see") : null,
     !arrived && facility ? h('a', { class: 'btn mismatch', href: nav.href('floorplan', {
       b: building.code, fac: facility.id, f: step.floor, stepfree: params.stepfree,
@@ -69,4 +78,11 @@ export function render(root, params, nav) {
     }) }, 'Show floor plan') : null,
     route.walkMin ? h('p', { class: 'muted small' }, `About ${minutes(route.walkMin)} total.`) : null,
   );
+}
+
+function otherBahenMode(building, destinationId, variant, route, from) {
+  if (variant === 'stairs') {
+    return route.usesStairs && getRoute(building, destinationId, 'standard', from) ? 'elevator' : undefined;
+  }
+  return getRoute(building, destinationId, 'stairs', from)?.usesStairs ? 'stairs' : undefined;
 }

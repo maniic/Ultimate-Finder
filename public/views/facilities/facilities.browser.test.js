@@ -54,7 +54,13 @@ const hashParams = (page) => new URLSearchParams(hashOf(page).split('?')[1] || '
 test('from search (no b): anchored at the first entrance, nearest bottle filler first', async () => {
   const { page, context, errors } = await open('#/facilities?type=bottle-filler');
   await page.getByRole('heading', { name: 'Nearest bottle filler' }).waitFor();
-  assert.ok(await page.locator('.anchor').getByText('Entrance A').isVisible());
+  const anchor = page.locator('.anchor');
+  assert.match(await anchor.innerText(), /Starting from: Entrance A/);
+  assert.ok(await anchor.getByRole('link', { name: 'Choose starting point', exact: true }).isVisible());
+  assert.ok(await anchor.evaluate((card) => {
+    const map = card.parentElement.querySelector('svg.plan');
+    return map && card.getBoundingClientRect().bottom <= map.getBoundingClientRect().top;
+  }), 'the starting point control is above the map');
   const first = page.locator('.results li').first();
   assert.match(await first.textContent(), /Floor 1 \(your floor\).*1 min walk.*Nearest.*Main lobby/);
   assert.match(await page.locator('.results li').nth(1).textContent(), /Floor 5 · 4 floors up.*8 min walk/);
@@ -67,7 +73,7 @@ test('from search (no b): anchored at the first entrance, nearest bottle filler 
 
 test('change where you are to room 10-210: the floor-10 filler moves to the top', async () => {
   const { page, context, errors } = await open('#/facilities?b=OI&type=bottle-filler');
-  await page.getByRole('link', { name: /Change where you are/ }).click();
+  await page.getByRole('link', { name: 'Choose starting point', exact: true }).click();
   await page.getByRole('heading', { name: 'Where are you?' }).waitFor();
   assert.equal(await page.locator('[aria-current="true"]').textContent(), 'Entrance ABloor St W, by the bike racks · Step-free');
   await page.getByRole('link', { name: /Room 10-210/ }).click();
@@ -77,7 +83,7 @@ test('change where you are to room 10-210: the floor-10 filler moves to the top'
   assert.equal(p.get('r'), '10-210');
   assert.equal(p.get('pick'), null);
   assert.match(await page.locator('.results li').first().textContent(), /Floor 10 \(your floor\).*1 min walk.*East of Elevators|washrooms/);
-  assert.ok(await page.locator('.anchor').getByText('Room 10-210').isVisible());
+  assert.match(await page.locator('.anchor').innerText(), /Starting from: Room 10-210/);
   // The anchor sticks when opening a facility and coming back.
   await page.locator('.results li .result-main').first().click();
   await page.getByText('About 1 min walk from Room 10-210.').waitFor();
@@ -117,7 +123,7 @@ test('unknown building, room or floor: says so and offers the chooser', async ()
   ]) {
     const { page, context, errors } = await open(path);
     await page.getByText(msg).waitFor();
-    await page.getByRole('link', { name: 'Choose where you are' }).click();
+    await page.getByRole('link', { name: 'Choose starting point', exact: true }).click();
     await page.waitForURL(/pick=1/);
     await page.getByRole('link', { name: /Entrance A/ }).waitFor();
     assert.deepEqual(errors, [], path);
@@ -132,11 +138,11 @@ test('already inside (a room): no outdoor map, the buttons go to the floor plan'
   assert.equal(await items.first().getByRole('link', { name: /Floor plan/ }).getAttribute('href'), '#/floorplan?b=OI&f=10');
   assert.equal(await page.getByRole('link', { name: /Walk there/ }).count(), 0);
   assert.equal(await items.nth(1).getByRole('link', { name: /Floor plan/ }).count(), 0, 'floor 5 has no plan yet');
-  // Detail: keeps the "Near" card, and Change comes back to this facility.
+  // The starting-point chooser returns to the same facility after changing the origin.
   await items.first().locator('.result-main').click();
   await page.getByRole('heading', { name: 'Bottle filler', exact: true }).waitFor();
   assert.equal(await page.getByRole('link', { name: 'Show on floor plan' }).getAttribute('href'), '#/floorplan?b=OI&f=10');
-  await page.getByRole('link', { name: /Change where you are/ }).click();
+  await page.getByRole('link', { name: 'Choose starting point', exact: true }).click();
   await page.waitForURL(/pick=1/);
   await page.getByRole('link', { name: /Entrance B/ }).click();
   await page.getByRole('heading', { name: 'Bottle filler', exact: true }).waitFor();
@@ -152,7 +158,7 @@ test('already inside (a room): no outdoor map, the buttons go to the floor plan'
 
 test('Bahen Walk there retains the selected room on both the list and the detail', async () => {
   const { page, context } = await open('#/facilities?b=BA&type=washroom&via=stairs');
-  await page.getByRole('link', { name: /Change where you are/ }).click();
+  await page.getByRole('link', { name: 'Choose starting point', exact: true }).click();
   await page.getByRole('link', { name: /Room 2179/ }).click();
   const name = 'Washrooms by the east elevators · Floor 2';
   const result = page.locator('.results li').filter({ hasText: name });
@@ -172,7 +178,7 @@ test('Bahen Walk there retains the selected room on both the list and the detail
 });
 
 test('Bahen map-only facilities retain the selected floor separately from the map floor', async () => {
-  const { page, context } = await open('#/facilities?b=BA&f=2&type=water-fountain');
+  const { page, context } = await open('#/facilities?b=BA&f=2&type=water-fountain&via=elevator');
   const result = page.locator('.results li').filter({ hasText: 'Water fountain near BA3285' });
   const map = result.getByRole('link', { name: /Floor plan/ });
   await map.waitFor();
@@ -182,6 +188,7 @@ test('Bahen map-only facilities retain the selected floor separately from the ma
   assert.equal(params.get('f'), '3');
   assert.equal(params.get('from'), 'f:2');
   assert.equal(params.get('fac'), 'ba-water-3');
+  assert.equal(params.get('via'), 'elevator');
   assert.equal(await result.getByRole('link', { name: /Walk there/ }).count(), 0);
   await context.close();
 });
