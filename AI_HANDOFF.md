@@ -66,7 +66,7 @@ design changes on pp. 22–32.
 
 ## Decisions log
 
-- **2026-11-26: More Bahen rooms; indoor buttons under the map (branch `view/preview-bahen-rooms`).** Abdullah found the PR #18 layout (indoor buttons above the map) confusing, so they're back under the map and summary. `public/js/bahen.js` (shared, approved by Abdullah for this) gained 22 rooms read off `public/maps/bahen/floor-*.png`, using `hallRoute`/`southRoute` helpers so each new room is one line. A test checks every room ends on its floor beside its outline.
+- **2026-11-26: More Bahen rooms; indoor buttons under the map (branch `view/preview-bahen-rooms`).** Abdullah found the PR #18 layout (indoor buttons above the map) confusing, so they're back under the map and summary. `public/js/bahen.js` (shared, approved by Abdullah for this) gained 22 rooms read off `public/maps/bahen/floor-*.png`, using `hallRoute`/`southRoute` helpers so each new room is one line. A test in `public/views/preview/bahen-rooms.test.js` checks every room ends on its floor beside its outline. Arrival text says "Stop at the door…" rather than left/right, because indoor starts can reach a room from either side.
 
 - **2026-11-25: Entrance pins from OpenStreetMap (branch `view/preview-entrances`).** `places.js` coordinates now come from OSM entrance nodes on each building outline (ids in comments): OISE A on the Bloor St W front, OISE B on the east side toward Bedford Rd, Bahen M on the St. George St side. Checked visually on the live Google map. Tests read pins from `places.js`, and the stale "Bahen has no indoor data" test now checks Bahen gets indoor steps.
 

@@ -43,7 +43,7 @@ const roomPlans = [
     ['3145', 3, 'Room', [692, 462, 85, 165]],
     ['3155', 3, 'Room', [607, 462, 85, 165]],
     ['3165', 3, 'Room', [522, 462, 85, 165]],
-    ['3175', 3, 'Room', [437, 462, 85, 165]],
+    ['3175', 3, 'Room', [437, 462, 85, 140]],
     ['3177', 3, 'Room', [375, 587, 62, 40]],
     ['3185', 3, 'Room', [352, 462, 85, 125]],
     ['3195', 3, 'Room', [270, 462, 82, 120]],
@@ -155,7 +155,7 @@ const elevatorExits = { 2: [902, 535], 3: [903, 544] };
 // Rooms whose door opens off a main hall: walk the hall, then turn to the door.
 function hallRoute(number, floor, x, doorY, finalText) {
   const sign = `BA${number} room sign`;
-  const arrive = step(floor, [x, doorY], finalText || `Turn right to the door marked BA${number}.`, sign, true);
+  const arrive = step(floor, [x, doorY], finalText || `Stop at the door marked BA${number}.`, sign, true);
   if (floor === 1) {
     return [...entranceSteps,
       step(1, [x, 659], `Continue along the main hall to BA${number} on your right.`, `BA${number} doorway`), arrive];
@@ -172,12 +172,12 @@ function southRoute(number, corridorY, x) {
     step(1, [555, 659], 'Continue down the main hall and turn left toward the south elevators.', 'South elevator hall turnoff'),
     step(1, [555, corridorY], `Turn right into the ${corridor} past the stairs.`, `Corridor ${corridorY === 712 ? '1210V' : '1220K'}`),
     step(1, [x, corridorY], `Follow the corridor to BA${number} on your left.`, `BA${number} doorway`),
-    step(1, [x, corridorY + 10], `Turn left to the door marked BA${number}.`, `BA${number} room sign`, true),
+    step(1, [x, corridorY + 10], `Stop at the door marked BA${number}.`, `BA${number} room sign`, true),
   ];
 }
 
 Object.assign(routes, {
-  '1160': hallRoute('1160', 1, 822, 634, 'Turn right to the door marked BA1160 at the back of the hall.'),
+  '1160': hallRoute('1160', 1, 822, 634, 'Stop at the door marked BA1160, at the back of the hall.'),
   '1180': hallRoute('1180', 1, 460, 636),
   '1200': southRoute('1200', 712, 528),
   '1210': southRoute('1210', 712, 445),
@@ -185,20 +185,20 @@ Object.assign(routes, {
   '1230': southRoute('1230', 858, 368),
   '1240': southRoute('1240', 858, 440),
   '2139': hallRoute('2139', 2, 838, 632),
-  '2145': hallRoute('2145', 2, 693, 592, 'Turn right into the short passage. BA2145 is the door at its end.'),
+  '2145': hallRoute('2145', 2, 693, 592, 'Go into the short passage. BA2145 is the door at its end.'),
   '2159': hallRoute('2159', 2, 665, 632),
-  '2165': hallRoute('2165', 2, 535, 592, 'Turn right into the short passage. BA2165 is the door at its end.'),
-  '2175': hallRoute('2175', 2, 505, 627),
-  '2185': hallRoute('2185', 2, 368, 627),
-  '2195': hallRoute('2195', 2, 335, 627, 'Turn right through BA2197 to the door marked BA2195.'),
+  '2165': hallRoute('2165', 2, 535, 592, 'Go into the short passage. BA2165 is the door at its end.'),
+  '2175': hallRoute('2175', 2, 505, 627, 'Go into the short passage. BA2175 is the door at its end.'),
+  '2185': hallRoute('2185', 2, 368, 627, 'Go into the short passage. BA2185 is the door at its end.'),
+  '2195': hallRoute('2195', 2, 335, 627, 'Go into the doorway beside BA2197. BA2195 is at the end.'),
   '3135': hallRoute('3135', 3, 840, 632),
   '3145': hallRoute('3145', 3, 711, 632),
   '3155': hallRoute('3155', 3, 617, 632),
   '3165': hallRoute('3165', 3, 538, 632),
-  '3175': hallRoute('3175', 3, 512, 632),
+  '3175': hallRoute('3175', 3, 512, 632, 'Go into the short passage. BA3175 is the door at its end.'),
   '3177': hallRoute('3177', 3, 405, 632),
-  '3185': hallRoute('3185', 3, 370, 632),
-  '3195': hallRoute('3195', 3, 335, 632, 'Turn right through BA3197 to the door marked BA3195.'),
+  '3185': hallRoute('3185', 3, 370, 632, 'Go into the short passage. BA3185 is the door at its end.'),
+  '3195': hallRoute('3195', 3, 335, 632, 'Go into the doorway beside BA3197. BA3195 is at the end.'),
 });
 const facilityRoutes = BAHEN_FACILITY_PLANS.filter((facility) => facility.steps).map(({ id, floor, steps }) => [
   id, [
