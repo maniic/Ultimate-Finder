@@ -8,20 +8,22 @@
 // entrances here. A building with no entry falls back to a Google Maps
 // search by name.
 //
-// VERIFY ON SITE: every coordinate below is an estimate from the campus map,
-// not a GPS reading at the door. Stand at each entrance and fix them.
+// Entrance coordinates come from OpenStreetMap entrance nodes on each
+// building's outline (looked up 2026-11-25), not from a GPS reading at the
+// door. Node ids are noted so they can be re-checked. Still worth a glance
+// on site.
 
 export const PLACES = {
   OI: {
     entrances: [
-      { id: 'A', lat: 43.66846, lng: -79.39848 }, // Bloor St W, by the bike racks
-      { id: 'B', lat: 43.66823, lng: -79.39905 }, // Bedford Rd side
+      { id: 'A', lat: 43.66795, lng: -79.39839 }, // Bloor St W front (OSM node 1707778363)
+      { id: 'B', lat: 43.66843, lng: -79.39837 }, // east side, toward Bedford Rd (OSM node 4461090647)
     ],
   },
   BA: {
     entrances: [
       { id: 'M', name: 'Main entrance', detail: '40 St. George St', stepFree: true,
-        note: 'Level entry, automatic doors', lat: 43.65957, lng: -79.39744 },
+        note: 'Level entry, automatic doors', lat: 43.65967, lng: -79.39691 }, // St. George St side (OSM node 733206245)
     ],
   },
 };
