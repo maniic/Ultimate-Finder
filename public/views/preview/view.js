@@ -131,11 +131,12 @@ function fill(body, building, params, nav) {
       : backLink(nav.href('search', { b: building.code, r: room?.number }), room ? 'Change room' : 'Back'),
     h('div', null, h('h1', null, heading), sub ? h('p', { class: 'muted' }, sub) : null),
     from && route?.startLabel ? h('p', { class: 'muted' }, `Starting from ${route.startLabel}`) : null,
-    routeType,
-    indoorActions);
+    routeType);
 
   if (from) {
+    // An indoor start has no outdoor map, so the actions go right here.
     append(body,
+      indoorActions,
       route ? h('p', { class: 'muted small' }, usingStairs
         ? stairNote
         : 'These directions follow the floor plans. Check doors and elevator access on site.')
@@ -224,6 +225,8 @@ function fill(body, building, params, nav) {
     dest && (!hasIndoorData || (room && !route)) ? h('p', { class: 'notice small' }, room
       ? `Indoor directions to ${building.code} ${room.number} aren't ready yet, so this gets you to the entrance.`
       : `Indoor directions for ${building.name} aren't ready yet, so this gets you to the entrance.`) : null,
+    // Under the map and summary, as before: get there first, then go inside.
+    indoorActions,
     facilityNote,
   );
 }

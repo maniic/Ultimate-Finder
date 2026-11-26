@@ -22,6 +22,32 @@ const roomPlans = [
   { number: '2179', floor: 2, type: 'Classroom', bounds: [378, 581, 60, 56] },
   { number: '3000', floor: 3, type: 'Classroom', bounds: [914, 175, 57, 75] },
   { number: '3200', floor: 3, type: 'Room', bounds: [273, 763, 157, 90] },
+  ...[
+    // Rooms added from the floor plans. Each door is where the plan shows a
+    // door swing, so check them on site like the rest of the pilot data.
+    ['1160', 1, 'Lecture hall', [690, 470, 160, 165]],
+    ['1180', 1, 'Lecture room', [391, 484, 84, 143]],
+    ['1200', 1, 'Lecture room', [457, 722, 78, 128]],
+    ['1210', 1, 'Lecture room', [377, 722, 80, 128]],
+    ['1220', 1, 'Lecture room', [297, 722, 80, 128]],
+    ['1230', 1, 'Lecture room', [297, 866, 78, 94]],
+    ['1240', 1, 'Lecture room', [377, 866, 76, 94]],
+    ['2139', 2, 'Room', [715, 585, 127, 50]],
+    ['2145', 2, 'Room', [692, 462, 85, 123]],
+    ['2159', 2, 'Room', [547, 585, 125, 50]],
+    ['2165', 2, 'Room', [522, 462, 85, 123]],
+    ['2175', 2, 'Room', [437, 462, 85, 120]],
+    ['2185', 2, 'Room', [352, 462, 85, 120]],
+    ['2195', 2, 'Room', [270, 462, 82, 115]],
+    ['3135', 3, 'Room', [777, 462, 85, 165]],
+    ['3145', 3, 'Room', [692, 462, 85, 165]],
+    ['3155', 3, 'Room', [607, 462, 85, 165]],
+    ['3165', 3, 'Room', [522, 462, 85, 165]],
+    ['3175', 3, 'Room', [437, 462, 85, 140]],
+    ['3177', 3, 'Room', [375, 587, 62, 40]],
+    ['3185', 3, 'Room', [352, 462, 85, 125]],
+    ['3195', 3, 'Room', [270, 462, 82, 120]],
+  ].map(([number, floor, type, bounds]) => ({ number, floor, type, bounds })),
 ];
 
 export const BAHEN_ROOMS = roomPlans.map(({ number, floor, type }) => ({ number, floor, type }));
@@ -125,6 +151,55 @@ const routes = {
 };
 
 const elevatorExits = { 2: [902, 535], 3: [903, 544] };
+
+// Rooms whose door opens off a main hall: walk the hall, then turn to the door.
+function hallRoute(number, floor, x, doorY, finalText) {
+  const sign = `BA${number} room sign`;
+  const arrive = step(floor, [x, doorY], finalText || `Stop at the door marked BA${number}.`, sign, true);
+  if (floor === 1) {
+    return [...entranceSteps,
+      step(1, [x, 659], `Continue along the main hall to BA${number} on your right.`, `BA${number} doorway`), arrive];
+  }
+  return [...elevatorSteps(floor, elevatorExits[floor]),
+    step(floor, [elevatorExits[floor][0], 650], 'Turn right out of the elevators and continue to the atrium hall.', 'Hall overlooking the atrium'),
+    step(floor, [x, 650], `Turn right and follow the hall to BA${number} on your right.`, `BA${number} doorway`), arrive];
+}
+
+// The lecture rooms south of the main hall, off corridors 1210V and 1220K.
+function southRoute(number, corridorY, x) {
+  const corridor = corridorY === 712 ? 'first corridor' : 'lower corridor';
+  return [...entranceSteps,
+    step(1, [555, 659], 'Continue down the main hall and turn left toward the south elevators.', 'South elevator hall turnoff'),
+    step(1, [555, corridorY], `Turn right into the ${corridor} past the stairs.`, `Corridor ${corridorY === 712 ? '1210V' : '1220K'}`),
+    step(1, [x, corridorY], `Follow the corridor to BA${number} on your left.`, `BA${number} doorway`),
+    step(1, [x, corridorY + 10], `Stop at the door marked BA${number}.`, `BA${number} room sign`, true),
+  ];
+}
+
+Object.assign(routes, {
+  '1160': hallRoute('1160', 1, 822, 634, 'Stop at the door marked BA1160, at the back of the hall.'),
+  '1180': hallRoute('1180', 1, 460, 636),
+  '1200': southRoute('1200', 712, 528),
+  '1210': southRoute('1210', 712, 445),
+  '1220': southRoute('1220', 712, 365),
+  '1230': southRoute('1230', 858, 368),
+  '1240': southRoute('1240', 858, 440),
+  '2139': hallRoute('2139', 2, 838, 632),
+  '2145': hallRoute('2145', 2, 693, 592, 'Go into the short passage. BA2145 is the door at its end.'),
+  '2159': hallRoute('2159', 2, 665, 632),
+  '2165': hallRoute('2165', 2, 535, 592, 'Go into the short passage. BA2165 is the door at its end.'),
+  '2175': hallRoute('2175', 2, 505, 627, 'Go into the short passage. BA2175 is the door at its end.'),
+  '2185': hallRoute('2185', 2, 368, 627, 'Go into the short passage. BA2185 is the door at its end.'),
+  '2195': hallRoute('2195', 2, 335, 627, 'Go into the doorway beside BA2197. BA2195 is at the end.'),
+  '3135': hallRoute('3135', 3, 840, 632),
+  '3145': hallRoute('3145', 3, 711, 632),
+  '3155': hallRoute('3155', 3, 617, 632),
+  '3165': hallRoute('3165', 3, 538, 632),
+  '3175': hallRoute('3175', 3, 512, 632, 'Go into the short passage. BA3175 is the door at its end.'),
+  '3177': hallRoute('3177', 3, 405, 632),
+  '3185': hallRoute('3185', 3, 370, 632, 'Go into the short passage. BA3185 is the door at its end.'),
+  '3195': hallRoute('3195', 3, 335, 632, 'Go into the doorway beside BA3197. BA3195 is at the end.'),
+});
 const facilityRoutes = BAHEN_FACILITY_PLANS.filter((facility) => facility.steps).map(({ id, floor, steps }) => [
   id, [
     ...(floor === 1 ? entranceSteps : elevatorSteps(floor, elevatorExits[floor])),

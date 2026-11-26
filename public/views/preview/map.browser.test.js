@@ -192,9 +192,11 @@ test('a Bahen room gets walking directions to its entrance and indoor steps', as
   await page.getByRole('heading', { name: 'BA 1170' }).waitFor();
   const start = page.getByRole('link', { name: /start indoor directions/i });
   await start.waitFor();
-  const mapTop = (await page.locator('.outdoor').boundingBox()).y;
-  assert.ok((await start.boundingBox()).y < mapTop);
-  assert.ok((await page.getByRole('link', { name: /show floor plan/i }).boundingBox()).y < mapTop);
+  // The indoor actions sit under the map and the summary, not above them.
+  const summary = await page.locator('.summary').boundingBox();
+  const summaryBottom = summary.y + summary.height;
+  assert.ok((await start.boundingBox()).y > summaryBottom);
+  assert.ok((await page.getByRole('link', { name: /show floor plan/i }).boundingBox()).y > summaryBottom);
   assert.equal(await page.getByText(/indoor directions .* aren.t ready/i).count(), 0);
   await page.getByRole('button', { name: /directions from my location/i }).click();
   await page.getByText('640 m').waitFor();
