@@ -12,13 +12,16 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { PLACES } from './places.js';
 
 const PUBLIC = fileURLToPath(new URL('../../', import.meta.url));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
 
 const ROBARTS = { latitude: 43.66443, longitude: -79.39915 };
-const ENTRANCE_B = '43.66823,-79.39905';
-const ENTRANCE_A = '43.66846,-79.39848';
+// Read from places.js so correcting a pin doesn't break the tests.
+const pin = (code, id) => { const e = PLACES[code].entrances.find((x) => x.id === id); return `${e.lat},${e.lng}`; };
+const ENTRANCE_B = pin('OI', 'B');
+const ENTRANCE_A = pin('OI', 'A');
 
 let server; let base; let browser;
 
@@ -183,15 +186,15 @@ test('step-free on: routes to the step-free entrance', async () => {
   await context.close();
 });
 
-test('a building with no indoor data (Bahen) still gets directions to its entrance', async () => {
+test('a Bahen room gets walking directions to its entrance and indoor steps', async () => {
   const { page, context, errors } = await open('#/preview?b=BA&r=1170', { geo: 'granted' });
   await page.getByRole('heading', { name: 'BA 1170' }).waitFor();
-  await page.getByText(/indoor directions .* aren.t ready/i).waitFor();
-  assert.equal(await page.getByRole('link', { name: /start route/i }).count(), 0);
+  await page.getByRole('link', { name: /start route/i }).waitFor();
+  assert.equal(await page.getByText(/indoor directions .* aren.t ready/i).count(), 0);
   await page.getByRole('button', { name: /directions from my location/i }).click();
   await page.getByText('640 m').waitFor();
   const req = (await page.evaluate(() => window.__fake.routeRequests))[0];
-  assert.equal(`${req.destination.lat},${req.destination.lng}`, '43.65957,-79.39744');
+  assert.equal(`${req.destination.lat},${req.destination.lng}`, pin('BA', 'M'));
   assert.deepEqual(errors, []);
   await context.close();
 });
